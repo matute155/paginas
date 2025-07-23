@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Dialog } from '@headlessui/react';
 import { Button } from './ui/button';
 import Input from './ui/input';
 import { useToast } from './ui/use-toast';
 import { useNavigate } from 'react-router-dom';
-
+import { loginAdmin } from '../api'; // ✅ Importamos la función centralizada
 
 const AdminLoginModal = ({ isOpen, onClose, onLogin }) => {
   const { toast } = useToast();
@@ -15,12 +14,9 @@ const AdminLoginModal = ({ isOpen, onClose, onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:3001/api/auth/login', {
-        email: credentials.email,
-        password: credentials.password,
-      });
+      const res = await loginAdmin(credentials.email, credentials.password); // ✅ Usamos la función central
 
-      if (res.data.success) {
+      if (res.success) {
         toast({
           title: 'Ingreso exitoso',
           description: 'Bienvenido, administrador.',
@@ -28,12 +24,17 @@ const AdminLoginModal = ({ isOpen, onClose, onLogin }) => {
         onClose();
         onLogin();
         navigate('/admin');
-
+      } else {
+        toast({
+          title: 'Error de autenticación',
+          description: res.message || 'Credenciales incorrectas',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       toast({
         title: 'Error de autenticación',
-        description: error.response?.data?.message || 'Ocurrió un error',
+        description: error.message || 'Ocurrió un error inesperado',
         variant: 'destructive',
       });
     }
@@ -72,4 +73,3 @@ const AdminLoginModal = ({ isOpen, onClose, onLogin }) => {
 };
 
 export default AdminLoginModal;
-

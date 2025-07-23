@@ -28,25 +28,29 @@ const About = () => {
   ];
 
   const team = [
-    {
-      name: "Matias Sanchez",
-      role: "Fundadora & CEO",
-      description: "Apasionada por el turismo y la hospitalidad sanjuanina.",
-      image: "Professional man CEO in San Juan office"
-    },
-    {
-      name: "Adrian vargas",
-      role: "Director de Operaciones",
-      description: "Experto en gestión hotelera con 15 años de experiencia.",
-      image: "Professional man operations director in modern office"
-    },
-    {
-      name: "Andre Arancibia",
-      role: "Gerente de Atención al Cliente",
-      description: "Dedicada a brindar la mejor experiencia a nuestros usuarios.",
-      image: "Professional woman customer service manager smiling"
-    }
-  ];
+  {
+    name: "Matias Sanchez",
+    role: "Fundador & CEO",
+    description: "Apasionado por el turismo y la hospitalidad sanjuanina.",
+    image: "/img/personita.jpg"
+
+  },
+  {
+    name: "Adrian Vargas",
+    role: "Director de Operaciones",
+    description: "Experto en gestión hotelera con 15 años de experiencia.",
+    image: "/img/personita.jpg"
+
+  },
+  {
+    name: "Andre Arancibia",
+    role: "Gerente de Atención al Cliente",
+    description: "Dedicada a brindar la mejor experiencia a nuestros usuarios.",
+    image: "/img/personita.jpg"
+
+  }
+];
+
 
   const stats = [
     { number: "40+", label: "Propiedades Activas" },
@@ -118,10 +122,7 @@ const About = () => {
               className="relative"
             >
               <div className="relative z-10">
-                <img  
-                  className="rounded-2xl shadow-2xl"
-                  alt="Paisaje de San Juan con montañas y viñedos"
-                 src="https://images.unsplash.com/photo-1636318414118-0b8f285082fc" />
+              
               </div>
               <div className="absolute -top-4 -right-4 w-full h-full bg-gradient-to-br from-blue-200 to-purple-200 rounded-2xl"></div>
             </motion.div>
@@ -241,7 +242,8 @@ const About = () => {
                   <img  
                     className="w-full h-full object-cover"
                     alt={`${member.name} - ${member.role} de San Juan Stays`}
-                   src="https://images.unsplash.com/photo-1644424235476-295f24d503d9" />
+                   src={member.image}
+ />
                 </div>
                 <div className="p-6 text-center">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">

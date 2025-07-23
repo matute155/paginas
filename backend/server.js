@@ -9,7 +9,13 @@ const adminRoutes = require('./routes/admin');
 const reservationRoutes = require('./routes/reservations');
 
 // Middlewares
-app.use(cors());
+const cors = require('cors');
+
+app.use(cors({
+  origin: 'https://desdeaca.com', // o tu dominio real
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+}));
+
 app.use(express.json());
 
 // Rutas estáticas para imágenes

@@ -12,42 +12,7 @@ const Home = () => {
   const { toast } = useToast();
   
 
-  // Datos de ejemplo de propiedades
-  const featuredProperties = [
-    {
-      id: 1,
-      title: "Casa Moderna en Centro",
-      location: "Centro, San Juan",
-      price: 8500,
-      rating: 4.8,
-      reviews: 24,
-      capacity: 4,
-      amenities: ["Wifi", "Estacionamiento", "Cocina", "TV"],
-      image: "Modern house in downtown San Juan with contemporary architecture"
-    },
-    {
-      id: 2,
-      title: "Departamento con Vista a la Montaña",
-      location: "Rivadavia, San Juan",
-      price: 6200,
-      rating: 4.9,
-      reviews: 18,
-      capacity: 2,
-      amenities: ["Wifi", "Balcón", "Cocina", "TV"],
-      image: "Apartment with mountain view in Rivadavia, San Juan"
-    },
-    {
-      id: 3,
-      title: "Casa Familiar con Piscina",
-      location: "Pocito, San Juan",
-      price: 12000,
-      rating: 4.7,
-      reviews: 31,
-      capacity: 8,
-      amenities: ["Piscina", "Wifi", "Parrilla", "Estacionamiento"],
-      image: "Family house with swimming pool in Pocito, San Juan"
-    }
-  ];
+  
 
   const navigate = useNavigate();
 
@@ -132,18 +97,19 @@ const handleSearch = (searchData) => {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProperties.map((property, index) => (
-              <motion.div
-                key={property.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-              >
-                <PropertyCard property={property} />
-              </motion.div>
-            ))}
-          </div>
+          {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  {featuredProperties.map((property, index) => (
+    <motion.div
+      key={property.id}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, delay: index * 0.1 }}
+    >
+      <PropertyCard property={property} />
+    </motion.div>
+  ))}
+</div> */}
+
 
           <div className="text-center mt-12">
             <Button 

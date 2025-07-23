@@ -15,7 +15,7 @@ const Accommodations = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState(() => ({
-  priceRange: [0, 20000],
+  priceRange: [0, 200000],
   propertyType: '',
   amenities: [],
   ...(searchParams || {}) // Si vienen datos de Home, los usa como base
