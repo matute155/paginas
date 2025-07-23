@@ -8,8 +8,6 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const reservationRoutes = require('./routes/reservations');
 
-// Middlewares
-const cors = require('cors');
 
 app.use(cors({
   origin: 'https://desdeaca.com', // o tu dominio real
