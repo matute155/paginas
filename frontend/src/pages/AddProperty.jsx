@@ -4,6 +4,12 @@ import { Camera, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import axios from 'axios';
+import Input from '@/components/ui/Input';
+import Textarea from '@/components/ui/Textarea';
+import Select from '@/components/ui/Select';
+import CheckboxGroup from '@/components/ui/CheckboxGroup';
+import FileUpload from '@/components/ui/FileUpload';
+
 
 const AddProperty = () => {
   const { toast } = useToast();
