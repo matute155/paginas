@@ -43,3 +43,6 @@ export const createReservation = async (reservationData) => {
   });
   return res.json();
 };
+
+// ✅ Exportar API_URL para que lo uses donde lo necesites
+export { API_URL };
