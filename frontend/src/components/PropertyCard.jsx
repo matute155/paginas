@@ -32,10 +32,11 @@ const PropertyCard = ({ property }) => {
           className="w-full h-full object-cover"
           alt={`${property.title} - Alojamiento en ${property.location}`}
           src={
-            property.image?.[0]
-              ? `${API_URL}${property.image[0]}` // ✅ Corregido para que funcione fuera de localhost
-              : '/placeholder.jpg'
-          }
+  property.image?.[0]
+    ? `${import.meta.env.VITE_API_URL}${property.image[0]}`
+    : '/placeholder.jpg'
+}
+
         />
         <div className="absolute top-4 right-4 bg-white rounded-full px-3 py-1 flex items-center space-x-1">
           <Star className="w-4 h-4 text-yellow-400 fill-current" />
