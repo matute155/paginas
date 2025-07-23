@@ -10,9 +10,10 @@ const reservationRoutes = require('./routes/reservations');
 
 
 app.use(cors({
-  origin: 'https://desdeaca.com', // o tu dominio real
+  origin: ['https://desdeaca.com', 'https://www.desdeaca.com'],
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 }));
+
 
 app.use(express.json());
 
