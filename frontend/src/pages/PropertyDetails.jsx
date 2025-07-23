@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useToast } from '@/components/ui/use-toast';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const ImageSlider = ({ images }) => {
   const [current, setCurrent] = useState(0);
 
@@ -12,7 +14,7 @@ const ImageSlider = ({ images }) => {
   return (
     <div className="relative w-full h-[22rem] md:h-[28rem] rounded-xl overflow-hidden shadow-xl mb-8">
       <img
-        src={`http://localhost:3001${images[current]}`}
+        src={`${API_URL}${images[current]}`}
         alt={`Foto ${current + 1}`}
         className="w-full h-full object-cover transition-all duration-500"
       />
@@ -56,7 +58,7 @@ const PropertyDetails = () => {
   });
 
   useEffect(() => {
-    axios.get(`http://localhost:3001/api/properties/${id}`)
+    axios.get(`${API_URL}/api/properties/${id}`)
       .then(res => setProperty(res.data))
       .catch(err => console.error("Error al cargar propiedad:", err));
   }, [id]);
@@ -64,31 +66,29 @@ const PropertyDetails = () => {
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleReservation = () => {
-  const phone = property.phone?.replace(/\D/g, ''); // limpia el número
-  if (!phone) {
-    toast({
-      title: 'Número no disponible',
-      description: 'No se encontró un número válido para contactar al anfitrión.',
-      variant: 'destructive'
-    });
-    return;
-  }
+    const phone = property.phone?.replace(/\D/g, '');
+    if (!phone) {
+      toast({
+        title: 'Número no disponible',
+        description: 'No se encontró un número válido para contactar al anfitrión.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
-  const message = encodeURIComponent(
-    `Hola! Estoy interesado en reservar la propiedad "${property.title}" en DesdeAca.com para ${formData.guests} personas, del ${formData.checkIn} al ${formData.checkOut}.`
-  );
+    const message = encodeURIComponent(
+      `Hola! Estoy interesado en reservar la propiedad "${property.title}" en DesdeAca.com para ${formData.guests} personas, del ${formData.checkIn} al ${formData.checkOut}.`
+    );
 
-  const url = `https://wa.me/${phone}?text=${message}`;
-  window.open(url, '_blank');
-};
-
+    const url = `https://wa.me/${phone}?text=${message}`;
+    window.open(url, '_blank');
+  };
 
   if (!property) return <div className="p-6 text-center text-gray-600">Cargando propiedad...</div>;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10 pt-20"> {/* <- padding-top agregado aquí */}
+    <div className="max-w-6xl mx-auto px-4 py-10 pt-20">
       <div className="grid md:grid-cols-2 gap-10">
-        {/* Info principal */}
         <div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">{property.title}</h1>
           <p className="text-gray-500">{property.location}</p>
@@ -111,7 +111,6 @@ const PropertyDetails = () => {
           </div>
         </div>
 
-        {/* Formulario */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-lg p-8 space-y-6">
           <h2 className="text-2xl font-semibold text-gray-800">Reservar</h2>
           <div className="space-y-4">
@@ -156,20 +155,19 @@ const PropertyDetails = () => {
               className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
-  onClick={handleReservation}
-  className="w-full py-3 text-white font-semibold rounded-lg bg-green-600 hover:bg-green-700 transition shadow"
->
-  Contactar por WhatsApp
-</button>
-{property.hostName && (
-  <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 space-y-1 text-sm">
-    <p><strong>Anfitrión:</strong> {property.hostName}</p>
-    {property.phone && <p><strong>Teléfono:</strong> {property.phone}</p>}
-    {property.contactEmail && <p><strong>Email:</strong> {property.contactEmail}</p>}
-  </div>
-)}
+              onClick={handleReservation}
+              className="w-full py-3 text-white font-semibold rounded-lg bg-green-600 hover:bg-green-700 transition shadow"
+            >
+              Contactar por WhatsApp
+            </button>
 
-
+            {property.hostName && (
+              <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800 space-y-1 text-sm">
+                <p><strong>Anfitrión:</strong> {property.hostName}</p>
+                {property.phone && <p><strong>Teléfono:</strong> {property.phone}</p>}
+                {property.contactEmail && <p><strong>Email:</strong> {property.contactEmail}</p>}
+              </div>
+            )}
           </div>
         </div>
       </div>
