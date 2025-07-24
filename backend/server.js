@@ -19,9 +19,10 @@ const corsOptions = {
   credentials: true
 };
 
+// Aplica CORS a todas las rutas
 app.use(cors(corsOptions));
-// Responde a preflights (OPTIONS) correctamente
-app.options('*', cors(corsOptions));
+// Maneja los preflight requests para cualquier ruta usando una expresión regular
+app.options(/.*/, cors(corsOptions));
 
 // ——————————————————————————————
 // 2) Resto de middlewares y rutas
