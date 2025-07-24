@@ -21,8 +21,6 @@ const corsOptions = {
 
 // Aplica CORS a todas las rutas
 app.use(cors(corsOptions));
-// Maneja los preflight requests para cualquier ruta usando una expresión regular
-app.options(/.*/, cors(corsOptions));
 
 // ——————————————————————————————
 // 2) Resto de middlewares y rutas
