@@ -10,29 +10,18 @@ const app = express();
 // ——————————————————————————————
 // 1) CONFIGURACIÓN DE CORS
 // ——————————————————————————————
-const allowedOrigins = [
-  'https://desdeaca.com',
-  'https://www.desdeaca.com'
-  // puedes agregar más dominios si los necesitas
-];
+const corsOptions = {
+  origin: [
+    'https://desdeaca.com',
+    'https://www.desdeaca.com'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true
+};
 
-app.use(cors({
-  origin(origin, callback) {
-    // permitir peticiones sin origin (por ejemplo desde Postman o mobile apps)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS policy: Origin not allowed'), false);
-  },
-  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
-  credentials: true,
-}));
-
-// Para responder OPTIONS preflight
-app.options('*', cors({
-  methods: ['GET','POST','PUT','DELETE','OPTIONS']
-}));
+app.use(cors(corsOptions));
+// Responde a preflights (OPTIONS) correctamente
+app.options('*', cors(corsOptions));
 
 // ——————————————————————————————
 // 2) Resto de middlewares y rutas
@@ -49,6 +38,7 @@ app.use('/api/reservations', require('./routes/reservations'));
 // 3) Sincronizar y levantar servidor
 // ——————————————————————————————
 const PORT = process.env.PORT || 3001;
+
 sequelize.authenticate()
   .then(() => console.log('🔌 Conectado a Postgres'))
   .then(() => sequelize.sync())
