@@ -10,20 +10,17 @@ const app = express();
 // ——————————————————————————————
 // 1) CONFIGURACIÓN DE CORS
 // ——————————————————————————————
-const corsOptions = {
+app.use(cors({
   origin: [
     'https://desdeaca.com',
     'https://www.desdeaca.com'
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   credentials: true
-};
-
-// Aplica CORS a todas las rutas
-app.use(cors(corsOptions));
+}));
 
 // ——————————————————————————————
-// 2) Resto de middlewares y rutas
+// 2) Middlwares y rutas
 // ——————————————————————————————
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -34,7 +31,7 @@ app.use('/api/admin',        require('./routes/admin'));
 app.use('/api/reservations', require('./routes/reservations'));
 
 // ——————————————————————————————
-// 3) Sincronizar y levantar servidor
+// 3) Conectar a la DB y arrancar el servidor
 // ——————————————————————————————
 const PORT = process.env.PORT || 3001;
 
