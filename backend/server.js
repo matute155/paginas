@@ -1,49 +1,58 @@
 // backend/server.js
-
-// 1) Carga variables de entorno
 require('dotenv').config();
-
 const express = require('express');
-const app = express();
 const cors = require('cors');
 const path = require('path');
-
-// 2) Importa la instancia de Sequelize
 const { sequelize } = require('./models');
 
-// 3) Importa tus rutas
-const propertiesRoutes = require('./routes/properties');
-const authRoutes       = require('./routes/auth');
-const adminRoutes      = require('./routes/admin');
-const reservationRoutes= require('./routes/reservations');
+const app = express();
 
-// 4) Middlewares
+// ——————————————————————————————
+// 1) CONFIGURACIÓN DE CORS
+// ——————————————————————————————
+const allowedOrigins = [
+  'https://desdeaca.com',
+  'https://www.desdeaca.com'
+  // puedes agregar más dominios si los necesitas
+];
+
 app.use(cors({
-  origin: [
-    'https://desdeaca.com',
-    'https://www.desdeaca.com',
-    process.env.FRONTEND_URL  // opcional: añade tu URL de Vercel
-  ],
-  methods: ['GET','POST','PUT','DELETE']
+  origin(origin, callback) {
+    // permitir peticiones sin origin (por ejemplo desde Postman o mobile apps)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS policy: Origin not allowed'), false);
+  },
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  credentials: true,
 }));
-app.use(express.json());
 
-// 5) Rutas estáticas (imágenes subidas)
+// Para responder OPTIONS preflight
+app.options('*', cors({
+  methods: ['GET','POST','PUT','DELETE','OPTIONS']
+}));
+
+// ——————————————————————————————
+// 2) Resto de middlewares y rutas
+// ——————————————————————————————
+app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// 6) Rutas de la API
-app.use('/api/properties',   propertiesRoutes);
-app.use('/api/auth',         authRoutes);
-app.use('/api/admin',        adminRoutes);
-app.use('/api/reservations', reservationRoutes);
+app.use('/api/properties',   require('./routes/properties'));
+app.use('/api/auth',         require('./routes/auth'));
+app.use('/api/admin',        require('./routes/admin'));
+app.use('/api/reservations', require('./routes/reservations'));
 
-// 7) Sincronizar modelos y levantar servidor
+// ——————————————————————————————
+// 3) Sincronizar y levantar servidor
+// ——————————————————————————————
 const PORT = process.env.PORT || 3001;
-
 sequelize.authenticate()
   .then(() => console.log('🔌 Conectado a Postgres'))
   .then(() => sequelize.sync())
-  .then(() => console.log('✅ Modelos sincronizados con la base de datos'))
+  .then(() => console.log('✅ Modelos sincronizados'))
   .then(() => {
     app.listen(PORT, () => {
       console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
