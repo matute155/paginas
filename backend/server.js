@@ -57,3 +57,5 @@ sequelize.authenticate()
     console.error('❌ No fue posible iniciar la base de datos:', err);
     // No hacemos process.exit para que el servidor siga vivo
   });
+
+  
