@@ -1,16 +1,16 @@
 // backend/server.js
 require('dotenv').config();
 const express = require('express');
-const path = require('path');
+const path    = require('path');
 const { sequelize } = require('./models');
 
 const app = express();
 
 // ——————————————————————————————
-// 1) CORS MANUAL (evitamos problemas de cors)
+// 1) CORS MANUAL (aplica a TODO)
 // ——————————————————————————————
 app.use((req, res, next) => {
-  // ⚠️ En producción cambia '*' por tu dominio, p.ej. 'https://www.desdeaca.com'
+  // ⚠️ En producción reemplaza '*' por 'https://www.desdeaca.com'
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -18,6 +18,13 @@ app.use((req, res, next) => {
     return res.sendStatus(200);
   }
   next();
+});
+
+// ——————————————————————————————
+// 1b) Endpoint de salud (ping)
+// ——————————————————————————————
+app.get('/ping', (req, res) => {
+  return res.send('pong');
 });
 
 // ——————————————————————————————
@@ -32,20 +39,21 @@ app.use('/api/admin',        require('./routes/admin'));
 app.use('/api/reservations', require('./routes/reservations'));
 
 // ——————————————————————————————
-// 3) Conectar a la DB y arrancar el servidor
+// 3) Arrancar el servidor INMEDIATAMENTE
 // ——————————————————————————————
 const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
+});
 
+// ——————————————————————————————
+// 4) Conectar a la base y sincronizar (en background)
+// ——————————————————————————————
 sequelize.authenticate()
   .then(() => console.log('🔌 Conectado a Postgres'))
   .then(() => sequelize.sync())
   .then(() => console.log('✅ Modelos sincronizados'))
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
-    });
-  })
   .catch(err => {
     console.error('❌ No fue posible iniciar la base de datos:', err);
-    process.exit(1);
+    // No hacemos process.exit para que el servidor siga vivo
   });
