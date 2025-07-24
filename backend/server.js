@@ -1,26 +1,27 @@
 // backend/server.js
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
 const { sequelize } = require('./models');
 
 const app = express();
 
 // ——————————————————————————————
-// 1) CONFIGURACIÓN DE CORS
+// 1) CORS MANUAL (evitamos problemas de cors)
 // ——————————————————————————————
-app.use(cors({
-  origin: [
-    'https://desdeaca.com',
-    'https://www.desdeaca.com'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  credentials: true
-}));
+app.use((req, res, next) => {
+  // ⚠️ En producción cambia '*' por tu dominio, p.ej. 'https://www.desdeaca.com'
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // ——————————————————————————————
-// 2) Middlwares y rutas
+// 2) Middlewares y rutas
 // ——————————————————————————————
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
