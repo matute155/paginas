@@ -1,182 +1,180 @@
+// backend/routes/properties.js
+
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const { Property } = require('../models');      // ← Modelo Sequelize
 const multer = require('multer');
 const path = require('path');
 
-
+// Configuración de Multer para subir imágenes
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../uploads')); // Guarda en /uploads
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../uploads'));
   },
-  filename: function (req, file, cb) {
-    const uniqueName = Date.now() + '-' + file.originalname;
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${file.originalname}`;
     cb(null, uniqueName);
   }
 });
+const upload = multer({ storage });
 
-const upload = multer({ storage: storage });
-
-
+// ——————————————————————————————
+// POST /api/properties
 // Crear una nueva propiedad
-router.post('/', upload.array('images', 10), (req, res) => {
-  let {
-  title,
-  location,
-  price,
-  rating,
-  reviews,
-  capacity,
-  amenities,
-  description,
-  address,
-  phone,
-  contactEmail,
-  hostName
-} = req.body;
-
-
-// Asegurar que amenities sea un array
-if (typeof amenities === 'string') {
+// ——————————————————————————————
+router.post('/', upload.array('images', 10), async (req, res) => {
   try {
-    amenities = JSON.parse(amenities);
-  } catch (e) {
-    amenities = [];
+    let {
+      title,
+      location,
+      price,
+      rating,
+      reviews,
+      capacity,
+      amenities,
+      description,
+      address,
+      phone,
+      contactEmail,
+      hostName
+    } = req.body;
+
+    // Parsear amenities a array
+    if (typeof amenities === 'string') {
+      try {
+        amenities = JSON.parse(amenities);
+      } catch {
+        amenities = [];
+      }
+    }
+
+    // Rutas de imágenes
+    const imagePaths = (req.files || []).map(f => `/uploads/${f.filename}`);
+
+    // Crear en Postgres
+    const nueva = await Property.create({
+      title,
+      location,
+      price: price ?? 0,
+      rating: rating ?? 0,
+      reviews: reviews ?? 0,
+      capacity,
+      amenities: JSON.stringify(amenities),
+      image: JSON.stringify(imagePaths),
+      status: 'pendiente',
+      description,
+      address,
+      phone,
+      contactEmail,
+      hostName
+    });
+
+    res.status(201).json(nueva);
+  } catch (err) {
+    console.error('Error creando propiedad:', err);
+    res.status(500).json({ error: err.message });
   }
-}
-
-
-  const imagePaths = req.files && req.files.length > 0
-  ? req.files.map(file => `/uploads/${file.filename}`)
-  : [];
-
-
-  const sql = `
-  INSERT INTO properties 
-  (title, location, price, rating, reviews, capacity, amenities, image, status, description, address, phone, contactEmail, hostName) 
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-`;
-
-
-const values = [
-  title,
-  location,
-  price,
-  rating || 0,
-  reviews || 0,
-  capacity,
-  JSON.stringify(amenities),
-  JSON.stringify(imagePaths),
-  'pendiente',
-  description,
-  address,
-  phone,
-  contactEmail,
-  hostName
-];
-
-
-
-  db.run(sql, values, function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ id: this.lastID });
-  });
 });
 
-
+// ——————————————————————————————
+// GET /api/properties
 // Obtener todas las propiedades
-router.get('/', (req, res) => {
-  db.all('SELECT * FROM properties', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-
-    const parsedRows = rows.map(row => {
+// ——————————————————————————————
+router.get('/', async (req, res) => {
+  try {
+    const list = await Property.findAll();
+    // Parsear JSON en amenities e image
+    const parsed = list.map(item => {
+      const row = item.toJSON();
       try {
-        row.amenities = typeof row.amenities === 'string' ? JSON.parse(row.amenities) : row.amenities;
+        row.amenities = typeof row.amenities === 'string'
+          ? JSON.parse(row.amenities)
+          : row.amenities;
       } catch {
         row.amenities = [];
       }
-
       try {
-  if (typeof row.image === 'string') {
-    row.image = JSON.parse(row.image);
-  }
-
-  if (!Array.isArray(row.image)) {
-    row.image = [row.image];
-  }
-} catch {
-  row.image = [];
-}
-
-
+        row.image = typeof row.image === 'string'
+          ? JSON.parse(row.image)
+          : row.image;
+        if (!Array.isArray(row.image)) row.image = [row.image];
+      } catch {
+        row.image = [];
+      }
       return row;
     });
-
-    res.json(parsedRows);
-  });
+    res.json(parsed);
+  } catch (err) {
+    console.error('Error obteniendo propiedades:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-
+// ——————————————————————————————
+// GET /api/properties/:id
 // Obtener una propiedad por ID
-router.get('/:id', (req, res) => {
-  const id = parseInt(req.params.id);
-
-  db.get('SELECT * FROM properties WHERE id = ?', [id], (err, row) => {
-    if (err) {
-      console.error("Error al obtener la propiedad:", err);
-      res.status(500).json({ error: 'Error interno del servidor' });
-    } else if (!row) {
-      res.status(404).json({ error: 'Propiedad no encontrada' });
-    } else {
-      // Aseguramos que amenities sea array
-      // Aseguramos que amenities sea array
-if (typeof row.amenities === 'string') {
+// ——————————————————————————————
+router.get('/:id', async (req, res) => {
   try {
-    row.amenities = JSON.parse(row.amenities);
-  } catch {
-    row.amenities = row.amenities.split(',').map(a => a.trim());
-  }
-}
+    const item = await Property.findByPk(req.params.id);
+    if (!item) return res.status(404).json({ error: 'Propiedad no encontrada' });
 
-// Aseguramos que image sea array
-if (typeof row.image === 'string') {
-  try {
-    row.image = JSON.parse(row.image);
-  } catch {
-    row.image = [row.image];
-  }
-}
-
-res.json(row);
-
+    const row = item.toJSON();
+    // Parsear amenities
+    if (typeof row.amenities === 'string') {
+      try {
+        row.amenities = JSON.parse(row.amenities);
+      } catch {
+        row.amenities = row.amenities.split(',').map(a => a.trim());
+      }
     }
-  });
+    // Parsear image
+    if (typeof row.image === 'string') {
+      try {
+        row.image = JSON.parse(row.image);
+      } catch {
+        row.image = [row.image];
+      }
+    }
+
+    res.json(row);
+  } catch (err) {
+    console.error('Error obteniendo propiedad:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// ——————————————————————————————
 // PUT /api/properties/:id/approve
-router.put('/:id/approve', (req, res) => {
-  const id = req.params.id;
-
-  const sql = `UPDATE properties SET status = 'aprobado' WHERE id = ?`;
-
-  db.run(sql, [id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
+// Aprobar una propiedad
+// ——————————————————————————————
+router.put('/:id/approve', async (req, res) => {
+  try {
+    const [updated] = await Property.update(
+      { status: 'aprobado' },
+      { where: { id: req.params.id } }
+    );
+    if (!updated) return res.status(404).json({ error: 'Propiedad no encontrada' });
     res.json({ success: true });
-  });
+  } catch (err) {
+    console.error('Error aprobando propiedad:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
-
+// ——————————————————————————————
 // DELETE /api/properties/:id
-router.delete('/:id', (req, res) => {
-  const id = req.params.id;
-
-  const sql = `DELETE FROM properties WHERE id = ?`;
-
-  db.run(sql, [id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true });
-  });
+// Eliminar una propiedad
+// ——————————————————————————————
+router.delete('/:id', async (req, res) => {
+  try {
+    const deleted = await Property.destroy({ where: { id: req.params.id } });
+    if (!deleted) return res.status(404).json({ error: 'Propiedad no encontrada' });
+    res.status(204).send();
+  } catch (err) {
+    console.error('Error eliminando propiedad:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
-
 
 module.exports = router;

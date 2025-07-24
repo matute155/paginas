@@ -1,49 +1,77 @@
+// backend/routes/reservations.js
+
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const { Reservation, Property } = require('../models'); // Modelos Sequelize
 
-router.post('/', (req, res) => {
+// POST /api/reservations
+// Crear una nueva reserva
+router.post('/', async (req, res) => {
   const { propertyId, name, email, checkIn, checkOut, guests } = req.body;
 
+  // Validación de campos obligatorios
   if (!propertyId || !name || !email || !checkIn || !checkOut || !guests) {
-    return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    return res
+      .status(400)
+      .json({ error: 'Faltan campos obligatorios' });
   }
 
-  const sql = `
-    INSERT INTO reservations 
-    (propertyId, name, email, checkIn, checkOut, guests) 
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
-  const values = [propertyId, name, email, checkIn, checkOut, guests];
+  try {
+    // Crear la reserva en Postgres
+    const nuevaReserva = await Reservation.create({
+      propertyId,
+      name,
+      email,
+      checkIn,
+      checkOut,
+      guests
+    });
 
-  db.run(sql, values, function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.status(201).json({ success: true, id: this.lastID });
-  });
+    res
+      .status(201)
+      .json({ success: true, id: nuevaReserva.id });
+  } catch (err) {
+    console.error('Error creando reserva:', err);
+    res
+      .status(500)
+      .json({ error: err.message });
+  }
 });
 
-router.get('/', (req, res) => {
-  const sql = `
-    SELECT 
-      reservations.id,
-      reservations.propertyId,
-      reservations.name,
-      reservations.email,
-      reservations.checkIn,
-      reservations.checkOut,
-      reservations.guests,
-      properties.title AS propertyTitle,
-      properties.location AS propertyLocation
-    FROM reservations
-    JOIN properties ON reservations.propertyId = properties.id
-  `;
+// GET /api/reservations
+// Obtener todas las reservas con datos de la propiedad
+router.get('/', async (req, res) => {
+  try {
+    const reservas = await Reservation.findAll({
+      include: {
+        model: Property,
+        attributes: ['id', 'title', 'location']
+      }
+    });
 
-  db.all(sql, [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
+    // Formatear la respuesta
+    const result = reservas.map(r => {
+      const { id, propertyId, name, email, checkIn, checkOut, guests, Property: prop } = r.toJSON();
+      return {
+        id,
+        propertyId,
+        propertyTitle: prop.title,
+        propertyLocation: prop.location,
+        name,
+        email,
+        checkIn,
+        checkOut,
+        guests
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    console.error('Error obteniendo reservas:', err);
+    res
+      .status(500)
+      .json({ error: err.message });
+  }
 });
-
-
 
 module.exports = router;
