@@ -1,8 +1,8 @@
-// backend/server.js
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const { sequelize } = require('./models');
+const axios = require('axios'); // ¡Importación faltante!
 
 const app = express();
 
@@ -37,13 +37,21 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // =====================
-// 3) Health Checks (CRÍTICO para Railway)
+// 3) Health Checks
 // =====================
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok',
-    db_status: sequelize.authenticate() ? 'connected' : 'disconnected'
-  });
+app.get('/health', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    res.status(200).json({ 
+      status: 'ok',
+      db_status: 'connected'
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      db_status: 'disconnected'
+    });
+  }
 });
 
 app.get('/ping', (req, res) => res.send('pong'));
@@ -61,24 +69,24 @@ app.use('/api/reservations', require('./routes/reservations'));
 // =====================
 const PORT = process.env.PORT || 8080;
 
-// Configuración mejorada para PostgreSQL en Railway
-sequelize.authenticate()
-  .then(() => {
+// Configuración mejorada para PostgreSQL
+const startServer = async () => {
+  try {
+    await sequelize.authenticate();
     console.log('🔌 Conectado a Postgres');
-    return sequelize.sync({ alter: true }); // Sync seguro para producción
-  })
-  .then(() => {
+    
+    await sequelize.sync({ alter: true });
+    console.log('✅ Modelos sincronizados');
+
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
-      
-      // Health check automático para Railway
-      setTimeout(() => {
-        axios.get(`http://localhost:${PORT}/health`)
-          .catch(() => process.exit(1)); // Si falla, reinicia
-      }, 5000);
     });
 
-    // Manejo elegante de cierre
+    // Keep-alive mejorado para PostgreSQL
+    setInterval(() => {
+      sequelize.query('SELECT 1').catch(() => process.exit(1));
+    }, 30000);
+
     process.on('SIGTERM', () => {
       server.close(() => {
         sequelize.close();
@@ -86,24 +94,10 @@ sequelize.authenticate()
         process.exit(0);
       });
     });
-  })
-  .catch(err => {
-    console.error('❌ Error de inicio:', err);
-    process.exit(1); // Falla explícita para reinicio
-  });
+  } catch (error) {
+    console.error('❌ Error de inicio:', error);
+    process.exit(1);
+  }
+};
 
-// =====================
-// 6) Manejo de errores
-// =====================
-app.use((err, req, res, next) => {
-  console.error('[ERROR]', err.stack);
-  res.status(500).json({
-    error: 'Error interno del servidor',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
-// Keep-alive para Railway
-setInterval(() => {
-  sequelize.query('SELECT 1');
-}, 30000);
+startServer();
