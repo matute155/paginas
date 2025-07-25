@@ -1,3 +1,4 @@
+// src/pages/AdminReservations.jsx
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
@@ -6,6 +7,7 @@ const AdminReservations = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Petición a ruta relativa; Vercel la reenviará a tu backend
     axios.get('/api/reservations')
       .then((res) => {
         console.log(res.data);
@@ -40,15 +42,15 @@ const AdminReservations = () => {
               </tr>
             </thead>
             <tbody>
-              {reservations.map((res) => (
-                <tr key={res.id} className="hover:bg-gray-50">
-                  <td className="p-2 border">{res.propertyTitle}</td>
-                  <td className="p-2 border">{res.propertyLocation}</td>
-                  <td className="p-2 border">{res.name}</td>
-                  <td className="p-2 border">{res.email}</td>
-                  <td className="p-2 border">{res.checkIn}</td>
-                  <td className="p-2 border">{res.checkOut}</td>
-                  <td className="p-2 border">{res.guests}</td>
+              {reservations.map((resv) => (
+                <tr key={resv.id} className="hover:bg-gray-50">
+                  <td className="p-2 border">{resv.propertyTitle}</td>
+                  <td className="p-2 border">{resv.propertyLocation}</td>
+                  <td className="p-2 border">{resv.name}</td>
+                  <td className="p-2 border">{resv.email}</td>
+                  <td className="p-2 border">{resv.checkIn}</td>
+                  <td className="p-2 border">{resv.checkOut}</td>
+                  <td className="p-2 border">{resv.guests}</td>
                 </tr>
               ))}
             </tbody>

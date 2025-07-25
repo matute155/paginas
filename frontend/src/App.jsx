@@ -1,5 +1,6 @@
+// src/App.jsx
 import React, { useState } from 'react';
-import axios from 'axios'; // ← Asegúrate de instalar axios: npm install axios
+import axios from 'axios'; // ← asegúrate de tener axios instalado
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import Navbar from '@/components/Navbar';
@@ -12,10 +13,10 @@ import Testimonials from '@/pages/Testimonials';
 import AddProperty from '@/pages/AddProperty';
 import AdminPanel from '@/pages/AdminPanel';
 import PropertyDetails from '@/pages/PropertyDetails';
-import AdminReservations from './pages/AdminReservations';
+import AdminReservations from '@/pages/AdminReservations';
 
-// Configura la URL base de todas las peticiones HTTP
-axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+// Elimina o comenta la línea que fija la URL base absoluta
+// axios.defaults.baseURL = import.meta.env.VITE_API_URL;
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

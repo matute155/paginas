@@ -1,21 +1,21 @@
+// src/pages/AdminPanel.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
-const API_URL = import.meta.env.VITE_API_URL;
-
 const AdminPanel = () => {
   const [properties, setProperties] = useState([]);
 
   useEffect(() => {
-    axios.get(`${API_URL}/api/properties`)
+    // 🚀 Llamada a ruta relativa
+    axios.get('/api/properties')
       .then(res => setProperties(res.data))
       .catch(err => console.error("Error al cargar propiedades:", err));
   }, []);
 
   const handleApprove = (id) => {
-    axios.put(`${API_URL}/api/properties/${id}/approve`)
+    axios.put(`/api/properties/${id}/approve`)
       .then(() => {
         setProperties((prev) =>
           prev.map((p) => (p.id === id ? { ...p, status: 'aprobado' } : p))
@@ -27,7 +27,7 @@ const AdminPanel = () => {
   const handleDelete = (id) => {
     if (!window.confirm('¿Estás seguro de eliminar esta propiedad?')) return;
 
-    axios.delete(`${API_URL}/api/properties/${id}`)
+    axios.delete(`/api/properties/${id}`)
       .then(() => {
         setProperties((prev) => prev.filter((p) => p.id !== id));
       })

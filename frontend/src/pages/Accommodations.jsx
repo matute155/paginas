@@ -6,7 +6,6 @@ import PropertyCard from '@/components/PropertyCard';
 import { useLocation } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { API_URL } from '@/api'; // ✅ Importamos la URL de la API
 
 const Accommodations = () => {
   const location = useLocation();
@@ -24,7 +23,8 @@ const Accommodations = () => {
   const [filteredProperties, setFilteredProperties] = useState([]);
 
   useEffect(() => {
-    axios.get(`${API_URL}/api/properties`)
+    // 🚀 Petición a ruta relativa; Vercel lo reenviará a tu API en Railway
+    axios.get('/api/properties')
       .then(res => {
         const normalized = res.data
           .filter(p => p.status === 'aprobado')
@@ -40,7 +40,6 @@ const Accommodations = () => {
 
         if (searchParams) {
           const { location, guests, fromDate, toDate } = searchParams;
-
           const filtered = normalized.filter((property) => {
             const matchLocation = location ? property.location.includes(location) : true;
             const matchGuests = guests ? property.capacity >= guests : true;
@@ -48,10 +47,8 @@ const Accommodations = () => {
             const availableTo = property.availableTo || '2100-01-01';
             const matchFromDate = fromDate ? fromDate >= availableFrom : true;
             const matchToDate = toDate ? toDate <= availableTo : true;
-
             return matchLocation && matchGuests && matchFromDate && matchToDate;
           });
-
           setFilteredProperties(filtered);
         } else {
           setFilteredProperties(normalized);
@@ -71,26 +68,20 @@ const Accommodations = () => {
       );
       return matchPrice && matchType && matchAmenities;
     });
-
     setFilteredProperties(filtered);
   }, [filters, properties]);
 
   const handleSearch = (searchData) => {
     const { location, guests, fromDate, toDate } = searchData;
-
     const filtered = properties.filter((property) => {
       const matchLocation = location ? property.location.includes(location) : true;
       const matchGuests = guests ? property.capacity >= guests : true;
-
       const availableFrom = property.availableFrom || '2000-01-01';
       const availableTo = property.availableTo || '2100-01-01';
-
       const matchFromDate = fromDate ? fromDate >= availableFrom : true;
       const matchToDate = toDate ? toDate <= availableTo : true;
-
       return matchLocation && matchGuests && matchFromDate && matchToDate;
     });
-
     setFilteredProperties(filtered);
   };
 
