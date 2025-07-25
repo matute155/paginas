@@ -10,6 +10,9 @@ const app = express();
 // 1) Configuración CORS
 // =====================
 const allowedOrigins = [
+  'https://paginas-lz8twfnyp-matias-sanchezs-projects-4f931374.vercel.app/',
+  'https://paginas-matias-sanchezs-projects-4f931374.vercel.app/',
+  'https://paginas-two.vercel.app/',
   'https://www.desdeaca.com',
   'https://paginas-1vnh09kud-matias-sanchezs-projects-4f931374.vercel.app',
   'http://localhost:3000'
