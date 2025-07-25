@@ -1,13 +1,11 @@
 require('dotenv').config();
 const express = require('express');
-const path = require('path');
 const { sequelize } = require('./models');
-const axios = require('axios'); // ¡Importación faltante!
 
 const app = express();
 
 // =====================
-// 1) Configuración CORS
+// 1) Configuración CORS (Actualizada)
 // =====================
 const allowedOrigins = [
   'https://paginas-lz8twfnyp-matias-sanchezs-projects-4f931374.vercel.app/',
@@ -24,81 +22,62 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', origin);
   }
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
-  
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  req.method === 'OPTIONS' ? res.sendStatus(200) : next();
 });
 
 // =====================
-// 2) Middlewares
-// =====================
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// =====================
-// 3) Health Checks
+// 2) Health Check Mejorado
 // =====================
 app.get('/health', async (req, res) => {
   try {
-    await sequelize.authenticate();
-    res.status(200).json({ 
-      status: 'ok',
-      db_status: 'connected'
-    });
+    await sequelize.authenticate(); // Verifica conexión a DB
+    res.status(200).json({ status: 'ok', db: 'connected' });
   } catch (error) {
-    res.status(500).json({
-      status: 'error',
-      db_status: 'disconnected'
-    });
+    res.status(500).json({ status: 'error', db: 'disconnected' });
   }
 });
 
-app.get('/ping', (req, res) => res.send('pong'));
-
 // =====================
-// 4) Rutas principales
-// =====================
-app.use('/api/properties', require('./routes/properties'));
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/reservations', require('./routes/reservations'));
-
-// =====================
-// 5) Conexión a DB y Server
+// 3) Conexión a PostgreSQL con Reconexión
 // =====================
 const PORT = process.env.PORT || 8080;
 
-// Configuración mejorada para PostgreSQL
+// Configuración robusta para Railway
 const startServer = async () => {
   try {
-    await sequelize.authenticate();
-    console.log('🔌 Conectado a Postgres');
-    
+    // Intenta reconectar a PostgreSQL hasta 3 veces
+    let retries = 3;
+    while (retries > 0) {
+      try {
+        await sequelize.authenticate();
+        console.log('🔌 Conectado a Postgres');
+        break;
+      } catch (dbError) {
+        retries--;
+        console.error(`❌ Error DB (${retries} intentos restantes):`, dbError.message);
+        if (retries === 0) throw dbError;
+        await new Promise(res => setTimeout(res, 5000)); // Espera 5s
+      }
+    }
+
     await sequelize.sync({ alter: true });
     console.log('✅ Modelos sincronizados');
 
     const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
+      console.log(`🚀 Servidor en puerto ${PORT}`);
+      
+      // Keep-alive para PostgreSQL
+      setInterval(() => sequelize.query('SELECT 1').catch(() => {}), 30000);
     });
 
-    // Keep-alive mejorado para PostgreSQL
-    setInterval(() => {
-      sequelize.query('SELECT 1').catch(() => process.exit(1));
-    }, 30000);
-
+    // Manejo de SIGTERM (para Railway)
     process.on('SIGTERM', () => {
-      server.close(() => {
-        sequelize.close();
-        console.log('🛑 Servidor cerrado');
-        process.exit(0);
-      });
+      console.log('🛑 Recibido SIGTERM');
+      server.close(() => sequelize.close().then(() => process.exit(0)));
     });
   } catch (error) {
-    console.error('❌ Error de inicio:', error);
+    console.error('❌ Error crítico:', error);
     process.exit(1);
   }
 };
