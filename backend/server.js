@@ -8,6 +8,7 @@ const app = express();
 // 1) Configuración CORS (Actualizada)
 // =====================
 const allowedOrigins = [
+  'https://paginas-production.up.railway.app/api/',
   'https://paginas-lz8twfnyp-matias-sanchezs-projects-4f931374.vercel.app/',
   'https://paginas-matias-sanchezs-projects-4f931374.vercel.app/',
   'https://paginas-two.vercel.app/',
