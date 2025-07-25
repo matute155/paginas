@@ -7,13 +7,17 @@ const { sequelize } = require('./models');
 const app = express();
 
 // ——————————————————————————————
-// 1) CORS MANUAL (aplica a TODO)
+// 1) CORS CONFIGURADO PARA PRODUCCIÓN
 // ——————————————————————————————
 app.use((req, res, next) => {
-  // ⚠️ En producción reemplaza '*' por 'https://www.desdeaca.com'
-  res.header('Access-Control-Allow-Origin', '*');
+  // CAMBIO CLAVE AQUÍ 👇
+  // Se especifica el dominio exacto del frontend para permitir la conexión.
+  res.header('Access-Control-Allow-Origin', 'https://www.desdeaca.com'); 
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // El navegador envía una petición OPTIONS (preflight) antes de peticiones como PUT o DELETE.
+  // Con esto respondemos que sí están permitidas.
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -57,5 +61,3 @@ sequelize.authenticate()
     console.error('❌ No fue posible iniciar la base de datos:', err);
     // No hacemos process.exit para que el servidor siga vivo
   });
-
-  
