@@ -99,3 +99,5 @@ const Accommodations = () => {
 };
 
 export default Accommodations;
+
+
