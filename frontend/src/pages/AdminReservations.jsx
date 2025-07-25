@@ -2,13 +2,16 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 
+// Configuración de la URL base del backend
+const API_BASE_URL = 'https://paginas-production.up.railway.app';
+
 const AdminReservations = () => {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Petición a ruta relativa; Vercel la reenviará a tu backend
-    axios.get('/api/reservations')
+    // Petición corregida con URL completa
+    axios.get(`${API_BASE_URL}/api/reservations`)
       .then((res) => {
         console.log(res.data);
         setReservations(res.data);

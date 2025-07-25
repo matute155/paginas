@@ -24,7 +24,7 @@ const Accommodations = () => {
 
   useEffect(() => {
     // 🚀 Petición a ruta relativa; Vercel lo reenviará a tu API en Railway
-    axios.get('/api/properties')
+    axios.get('https://paginas-production.up.railway.app/api/properties')  // ← URL real de tu backend
       .then(res => {
         const normalized = res.data
           .filter(p => p.status === 'aprobado')

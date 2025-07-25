@@ -11,6 +11,9 @@ import Select from '@/components/ui/Select';
 import CheckboxGroup from '@/components/ui/CheckboxGroup';
 import FileUpload from '@/components/ui/FileUpload';
 
+// Configuración de la URL base del backend
+const API_BASE_URL = 'https://paginas-production.up.railway.app';
+
 const AddProperty = () => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
@@ -67,8 +70,8 @@ const AddProperty = () => {
 
       formData.images.forEach(image => form.append('images', image));
 
-      // ✂️ Petición a ruta relativa en lugar de VITE_API_URL
-      await axios.post('/api/properties', form, {
+      // Petición corregida con URL completa del backend
+      await axios.post(`${API_BASE_URL}/api/properties`, form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 

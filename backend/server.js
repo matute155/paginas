@@ -1,23 +1,28 @@
 // backend/server.js
 require('dotenv').config();
 const express = require('express');
-const path    = require('path');
+const path = require('path');
 const { sequelize } = require('./models');
 
 const app = express();
 
 // ——————————————————————————————
-// 1) CORS CONFIGURADO PARA PRODUCCIÓN
+// 1) CORS configurado para producción y desarrollo
 // ——————————————————————————————
+const allowedOrigins = [
+  'https://www.desdeaca.com',
+  'https://paginas-nsm6rf03j-matias-sanchezs-projects-4f931374.vercel.app/', // Reemplaza con tu URL en Vercel
+  'http://localhost:3000' // Para desarrollo local
+];
+
 app.use((req, res, next) => {
-  // CAMBIO CLAVE AQUÍ 👇
-  // Se especifica el dominio exacto del frontend para permitir la conexión.
-  res.header('Access-Control-Allow-Origin', 'https://www.desdeaca.com'); 
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
   res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   
-  // El navegador envía una petición OPTIONS (preflight) antes de peticiones como PUT o DELETE.
-  // Con esto respondemos que sí están permitidas.
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -25,39 +30,50 @@ app.use((req, res, next) => {
 });
 
 // ——————————————————————————————
-// 1b) Endpoint de salud (ping)
+// 2) Middlewares básicos
+// ——————————————————————————————
+app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ——————————————————————————————
+// 3) Endpoint de salud (para probar que el backend funciona)
 // ——————————————————————————————
 app.get('/ping', (req, res) => {
   return res.send('pong');
 });
 
 // ——————————————————————————————
-// 2) Middlewares y rutas
+// 4) Rutas principales
 // ——————————————————————————————
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-app.use('/api/properties',   require('./routes/properties'));
-app.use('/api/auth',         require('./routes/auth'));
-app.use('/api/admin',        require('./routes/admin'));
+app.use('/api/properties', require('./routes/properties'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
 app.use('/api/reservations', require('./routes/reservations'));
 
 // ——————————————————————————————
-// 3) Arrancar el servidor INMEDIATAMENTE
+// 5) Conexión a Postgres y inicio del servidor
 // ——————————————————————————————
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 8080; // Railway usa 8080 por defecto
+
+sequelize.authenticate()
+  .then(() => {
+    console.log('🔌 Conectado a Postgres');
+    return sequelize.sync();
+  })
+  .then(() => {
+    console.log('✅ Modelos sincronizados');
+    app.listen(PORT, '0.0.0.0', () => { // '0.0.0.0' es clave para Railway
+      console.log(`🚀 Servidor escuchando en el puerto ${PORT}`);
+    });
+  })
+  .catch(err => {
+    console.error('❌ Error al iniciar la base de datos:', err);
+  });
 
 // ——————————————————————————————
-// 4) Conectar a la base y sincronizar (en background)
+// 6) Manejo básico de errores (opcional pero recomendado)
 // ——————————————————————————————
-sequelize.authenticate()
-  .then(() => console.log('🔌 Conectado a Postgres'))
-  .then(() => sequelize.sync())
-  .then(() => console.log('✅ Modelos sincronizados'))
-  .catch(err => {
-    console.error('❌ No fue posible iniciar la base de datos:', err);
-    // No hacemos process.exit para que el servidor siga vivo
-  });
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).send('Algo salió mal en el servidor');
+});

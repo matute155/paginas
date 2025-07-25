@@ -4,18 +4,21 @@ import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
+// Configuración de la URL base del backend
+const API_BASE_URL = 'https://paginas-production.up.railway.app';
+
 const AdminPanel = () => {
   const [properties, setProperties] = useState([]);
 
   useEffect(() => {
-    // 🚀 Llamada a ruta relativa
-    axios.get('/api/properties')
+    // Petición corregida con URL completa
+    axios.get(`${API_BASE_URL}/api/properties`)
       .then(res => setProperties(res.data))
       .catch(err => console.error("Error al cargar propiedades:", err));
   }, []);
 
   const handleApprove = (id) => {
-    axios.put(`/api/properties/${id}/approve`)
+    axios.put(`${API_BASE_URL}/api/properties/${id}/approve`)
       .then(() => {
         setProperties((prev) =>
           prev.map((p) => (p.id === id ? { ...p, status: 'aprobado' } : p))
@@ -27,7 +30,7 @@ const AdminPanel = () => {
   const handleDelete = (id) => {
     if (!window.confirm('¿Estás seguro de eliminar esta propiedad?')) return;
 
-    axios.delete(`/api/properties/${id}`)
+    axios.delete(`${API_BASE_URL}/api/properties/${id}`)
       .then(() => {
         setProperties((prev) => prev.filter((p) => p.id !== id));
       })

@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useState } from 'react';
-import axios from 'axios'; // ← asegúrate de tener axios instalado
+import axios from 'axios';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from '@/components/ui/toaster';
 import Navbar from '@/components/Navbar';
@@ -15,8 +15,15 @@ import AdminPanel from '@/pages/AdminPanel';
 import PropertyDetails from '@/pages/PropertyDetails';
 import AdminReservations from '@/pages/AdminReservations';
 
-// Elimina o comenta la línea que fija la URL base absoluta
-// axios.defaults.baseURL = import.meta.env.VITE_API_URL;
+// Configuración centralizada de Axios (opcional)
+const configureAxios = () => {
+  axios.defaults.baseURL = 'https://paginas-production.up.railway.app';
+  axios.defaults.headers.common['Content-Type'] = 'application/json';
+  // Puedes agregar más configuraciones globales aquí
+};
+
+// Ejecutar la configuración al cargar el App
+configureAxios();
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
