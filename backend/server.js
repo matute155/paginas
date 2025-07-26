@@ -3,9 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { sequelize } = require('./models');
 const propertyRoutes = require('./routes/properties');
-
-// ✅ Importar fetch para keep-alive (Node)
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const fetch = require('node-fetch'); // ✅ CORRECTO para CommonJS
 
 const app = express();
 
