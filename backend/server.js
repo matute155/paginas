@@ -34,6 +34,11 @@ app.use(express.json()); // ✅ Necesario para leer JSON del body
 // =====================
 app.use('/api/properties', propertyRoutes); // ✅ Montar las rutas
 
+app.get('/', (req, res) => {
+  res.send('Backend funcionando correctamente');
+});
+
+
 app.get('/health', async (req, res) => {
   try {
     await sequelize.authenticate();
@@ -42,6 +47,7 @@ app.get('/health', async (req, res) => {
     res.status(500).json({ status: 'error', db: 'disconnected' });
   }
 });
+
 
 // =====================
 // 3) Iniciar servidor con reconexión
