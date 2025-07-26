@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const { sequelize } = require('./models');
 const propertyRoutes = require('./routes/properties');
-const fetch = require('node-fetch'); // ✅ CORRECTO para CommonJS
+const fetch = require('node-fetch'); // ✅ Usamos node-fetch@2
 
 const app = express();
 
@@ -78,12 +78,12 @@ const startServer = async () => {
       // Keep-alive para PostgreSQL
       setInterval(() => sequelize.query('SELECT 1').catch(() => {}), 30000);
 
-      // ✅ Keep-alive para Railway (evita que se apague el contenedor)
+      // ✅ Keep-alive para Railway (prueba: cada 20 segundos)
       setInterval(() => {
         fetch('https://paginas-production.up.railway.app/')
           .then(res => console.log('🟢 Ping enviado a Railway'))
           .catch(err => console.error('🔴 Error pinging Railway:', err.message));
-      }, 5 * 60 * 1000); // cada 5 minutos
+      }, 20 * 1000); // 20 segundos para test
     });
 
     process.on('SIGTERM', () => {
