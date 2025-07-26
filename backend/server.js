@@ -2,7 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { sequelize } = require('./models');
-const propertyRoutes = require('./routes/properties'); // ✅ Importar las rutas
+const propertyRoutes = require('./routes/properties');
+
+// ✅ Importar fetch para keep-alive (Node)
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const app = express();
 
@@ -27,17 +30,16 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json()); // ✅ Necesario para leer JSON del body
+app.use(express.json());
 
 // =====================
 // 2) Rutas
 // =====================
-app.use('/api/properties', propertyRoutes); // ✅ Montar las rutas
+app.use('/api/properties', propertyRoutes);
 
 app.get('/', (req, res) => {
   res.send('Backend funcionando correctamente');
 });
-
 
 app.get('/health', async (req, res) => {
   try {
@@ -48,9 +50,8 @@ app.get('/health', async (req, res) => {
   }
 });
 
-
 // =====================
-// 3) Iniciar servidor con reconexión
+// 3) Iniciar servidor con reconexión + keep-alive
 // =====================
 const PORT = process.env.PORT || 8080;
 
@@ -75,7 +76,16 @@ const startServer = async () => {
 
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Servidor en puerto ${PORT}`);
+
+      // Keep-alive para PostgreSQL
       setInterval(() => sequelize.query('SELECT 1').catch(() => {}), 30000);
+
+      // ✅ Keep-alive para Railway (evita que se apague el contenedor)
+      setInterval(() => {
+        fetch('https://paginas-production.up.railway.app/')
+          .then(res => console.log('🟢 Ping enviado a Railway'))
+          .catch(err => console.error('🔴 Error pinging Railway:', err.message));
+      }, 5 * 60 * 1000); // cada 5 minutos
     });
 
     process.on('SIGTERM', () => {
