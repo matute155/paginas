@@ -35,28 +35,30 @@ app.use(express.json());
 // 2) Rutas
 // =====================
 app.use('/api/properties', propertyRoutes);
-
 app.get('/', (req, res) => {
   res.send('Backend funcionando correctamente');
 });
 
-// Health check inmediato
-app.get('/health', (req, res) => {
+// =====================
+// 3) Health check
+// =====================
+// Responde inmediato con 200 para que Railway lo considere “up”
+app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
 // =====================
-// 3) Iniciar servidor primero
+// 4) Levantar servidor YA
 // =====================
 const PORT = process.env.PORT || 8080;
-console.log('🖥️ Puerto usado por Express:', PORT);
+console.log('🖥️  Puerto usado por Express:', PORT);
 
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
 });
 
 // =====================
-// 4) Conectar y sincronizar DB en background
+// 5) Conexión a DB en background
 // =====================
 (async () => {
   try {
