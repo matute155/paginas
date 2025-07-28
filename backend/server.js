@@ -7,7 +7,7 @@ const propertyRoutes = require('./routes/properties');
 const app = express();
 
 // =====================
-// 1) Middleware
+// 1) Middleware CORS
 // =====================
 const allowedOrigins = [
   'https://www.desdeaca.com',
@@ -15,7 +15,6 @@ const allowedOrigins = [
   'https://tudominio.vercel.app',
   'http://localhost:3000'
 ];
-
 app.use(cors({
   origin(origin, cb) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -35,15 +34,15 @@ app.use(express.json());
 // 2) Rutas
 // =====================
 app.use('/api/properties', propertyRoutes);
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
   res.send('Backend funcionando correctamente');
 });
 
 // =====================
-// 3) Health check
+// 3) Health Check
+//    Responde rápido a cualquier método
 // =====================
-// Responde inmediato con 200 para que Railway lo considere “up”
-app.get('/health', (_req, res) => {
+app.all('/health', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
