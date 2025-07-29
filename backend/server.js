@@ -12,7 +12,7 @@ const app = express();
 const allowedOrigins = [
   'https://www.desdeaca.com',
   'https://desdeaca.com',
-  'https://tudominio.vercel.app',
+  'https://vercel.com/matias-sanchezs-projects-4f931374/paginas/7YfyN4qSpb33QV5tjUJkhp6LB223',
   'http://localhost:3000'
 ];
 app.use(cors({
