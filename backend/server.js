@@ -13,13 +13,27 @@ const allowedOrigins = [
   'https://www.desdeaca.com',
   'https://desdeaca.com',
   'https://tudominio.vercel.app',
-  'http://localhost:3000'
+  'http://localhost:3000',
+  // Add your Vercel domain here
+  process.env.FRONTEND_URL,
+  // Allow all Vercel preview deployments
+  /^https:\/\/.*\.vercel\.app$/
 ];
 app.use(cors({
   origin(origin, cb) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin) return cb(null, true);
+    
+    // Check if origin is in allowed list or matches Vercel pattern
+    const isAllowed = allowedOrigins.some(allowed => {
+      if (typeof allowed === 'string') return allowed === origin;
+      if (allowed instanceof RegExp) return allowed.test(origin);
+      return false;
+    });
+    
+    if (isAllowed) {
       return cb(null, true);
     }
+    
     console.warn('CORS DENIED for origin:', origin);
     cb(new Error('Not allowed by CORS'));
   },
