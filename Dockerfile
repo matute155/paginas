@@ -4,14 +4,14 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from backend directory
+COPY backend/package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production
 
-# Copy source code
-COPY . .
+# Copy backend source code
+COPY backend/ .
 
 # Create uploads directory with proper permissions
 RUN mkdir -p uploads && chmod 755 uploads
