@@ -83,3 +83,45 @@ const server = app.listen(PORT, '0.0.0.0', () => {
     console.error('❌ Error DB:', err);
   }
 })();
+
+// =====================
+// 6) Graceful shutdown handling
+// =====================
+const gracefulShutdown = async (signal) => {
+  console.log(`\n🛑 Recibida señal ${signal}. Cerrando servidor gracefully...`);
+  
+  server.close(async () => {
+    console.log('✅ Servidor HTTP cerrado');
+    
+    try {
+      await sequelize.close();
+      console.log('✅ Conexión a base de datos cerrada');
+    } catch (err) {
+      console.error('❌ Error cerrando DB:', err);
+    }
+    
+    console.log('✅ Proceso terminado gracefully');
+    process.exit(0);
+  });
+  
+  // Force close after 10 seconds
+  setTimeout(() => {
+    console.error('❌ Forzando cierre después de 10 segundos');
+    process.exit(1);
+  }, 10000);
+};
+
+// Handle shutdown signals
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+  gracefulShutdown('UNCAUGHT_EXCEPTION');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  gracefulShutdown('UNHANDLED_REJECTION');
+});
