@@ -10,6 +10,7 @@ const app = express();
 // 1) Middleware CORS
 // =====================
 const allowedOrigins = [
+  'https://paginas-qhonlubz6-matias-sanchezs-projects-4f931374.vercel.app',
   'https://www.desdeaca.com',
   'https://desdeaca.com',
   'https://paginas-production.up.railway.app', // tu backend en Railway
