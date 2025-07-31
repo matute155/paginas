@@ -1,4 +1,5 @@
-const { getModels, parseJsonField } = require('../_lib/db');
+// Cambia require a import (recomendado para Vercel)
+import { getModels, parseJsonField } from '../_lib/db';
 
 // Headers para CORS
 const corsHeaders = {
@@ -8,7 +9,8 @@ const corsHeaders = {
   'Access-Control-Allow-Credentials': 'true'
 };
 
-module.exports = async (req, res) => {
+// Usa export default en lugar de module.exports
+export default async function handler(req, res) {
   // Manejar preflight CORS
   if (req.method === 'OPTIONS') {
     Object.entries(corsHeaders).forEach(([key, value]) => {
@@ -40,9 +42,9 @@ module.exports = async (req, res) => {
     console.error('Error en /api/properties/[id]:', error);
     return res.status(500).json({ error: error.message });
   }
-};
+}
 
-// Obtener propiedad por ID
+// Funciones auxiliares (no necesitan exportarse)
 async function getPropertyById(Property, res, id) {
   try {
     const item = await Property.findByPk(id);
@@ -69,7 +71,6 @@ async function getPropertyById(Property, res, id) {
   }
 }
 
-// Eliminar propiedad
 async function deleteProperty(Property, res, id) {
   try {
     const deleted = await Property.destroy({ where: { id } });

@@ -1,9 +1,7 @@
-const { Sequelize, DataTypes } = require('sequelize');
+import { Sequelize, DataTypes } from 'sequelize';
 
-// Variable global para reutilizar la conexión entre invocaciones
 let sequelize = null;
 
-// Inicializar conexión a Neon DB
 function getSequelizeInstance() {
   if (!sequelize) {
     const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
@@ -32,11 +30,10 @@ function getSequelizeInstance() {
   return sequelize;
 }
 
-// Definir modelos
 function defineModels(sequelize) {
   const models = {};
 
-  // Modelo Property
+  // Modelo Property (completo)
   models.Property = sequelize.define('Property', {
     id: {
       type: DataTypes.INTEGER,
@@ -68,11 +65,11 @@ function defineModels(sequelize) {
       allowNull: false
     },
     amenities: {
-      type: DataTypes.TEXT, // JSON string
+      type: DataTypes.TEXT,
       defaultValue: '[]'
     },
     image: {
-      type: DataTypes.TEXT, // JSON string con array de URLs
+      type: DataTypes.TEXT,
       defaultValue: '[]'
     },
     status: {
@@ -99,7 +96,7 @@ function defineModels(sequelize) {
     timestamps: true
   });
 
-  // Modelo Reservation
+  // Modelo Reservation (completo)
   models.Reservation = sequelize.define('Reservation', {
     id: {
       type: DataTypes.INTEGER,
@@ -139,7 +136,7 @@ function defineModels(sequelize) {
     timestamps: true
   });
 
-  // Modelo Admin
+  // Modelo Admin (completo)
   models.Admin = sequelize.define('Admin', {
     id: {
       type: DataTypes.INTEGER,
@@ -160,22 +157,20 @@ function defineModels(sequelize) {
     timestamps: true
   });
 
-  // Definir asociaciones
+  // Asociaciones
   models.Property.hasMany(models.Reservation, { foreignKey: 'propertyId' });
   models.Reservation.belongsTo(models.Property, { foreignKey: 'propertyId' });
 
   return models;
 }
 
-// Función principal para obtener modelos
 async function getModels() {
   const sequelize = getSequelizeInstance();
   const models = defineModels(sequelize);
   
-  // Sincronizar modelos (solo si es necesario)
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: false }); // No alterar en producción
+    await sequelize.sync({ alter: false });
   } catch (error) {
     console.error('Error conectando a la base de datos:', error);
     throw error;
@@ -184,7 +179,6 @@ async function getModels() {
   return { sequelize, ...models };
 }
 
-// Utilitario para parsear campos JSON
 function parseJsonField(field, defaultValue = []) {
   if (!field) return defaultValue;
   if (typeof field === 'string') {
@@ -197,7 +191,4 @@ function parseJsonField(field, defaultValue = []) {
   return field;
 }
 
-module.exports = {
-  getModels,
-  parseJsonField
-};
+export { getModels, parseJsonField };
