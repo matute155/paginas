@@ -117,6 +117,7 @@ async function getPropertyById(Property, res, id) {
   }
 }
 
+
 // Crear nueva propiedad
 async function createProperty(Property, req, res) {
   try {
