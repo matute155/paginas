@@ -116,9 +116,7 @@ async function getPropertyById(Property, res, id) {
     return res.status(500).json({ error: error.message });
   }
 }
-
-
-// Crear nueva propiedad
+// Crear nueva propieda
 async function createProperty(Property, req, res) {
   try {
     let fields = {};
