@@ -4,12 +4,6 @@ import { defineConfig, createLogger } from 'vite';
 
 const isDev = process.env.NODE_ENV !== 'production';
 
-let inlineEditPlugin, editModeDevPlugin;
-if (isDev) {
-  inlineEditPlugin = (await import('./plugins/visual-editor/vite-plugin-react-inline-editor.js')).default;
-  editModeDevPlugin = (await import('./plugins/visual-editor/vite-plugin-edit-mode.js')).default;
-}
-
 // 🛠️ Scripts solo para desarrollo
 const errorScripts = isDev
   ? [
@@ -60,7 +54,6 @@ logger.error = (msg, options) => {
 export default defineConfig({
   customLogger: logger,
   plugins: [
-    ...(isDev ? [inlineEditPlugin(), editModeDevPlugin()] : []),
     react(),
     addTransformIndexHtml,
   ],
@@ -70,11 +63,6 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'credentialless',
     },
     allowedHosts: true,
-    proxy: isDev
-      ? {
-          '/api': 'http://localhost:3001',
-        }
-      : undefined,
   },
   resolve: {
     extensions: ['.jsx', '.js', '.tsx', '.ts', '.json'],
