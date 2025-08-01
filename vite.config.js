@@ -5,16 +5,24 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   plugins: [
     react({
-      // Añade esto para evitar JSX inyectado en HTML
+      // Configuración optimizada para JSX
       babel: {
-        plugins: ['@babel/plugin-transform-react-jsx']
-      }
+        plugins: ['@babel/plugin-transform-react-jsx'],
+        // Añade presets para asegurar compatibilidad
+        presets: ['@babel/preset-react']
+      },
+      // Añade esto para forzar el tipo MIME correcto
+      jsxRuntime: 'classic'
     })
   ],
   server: {
     cors: true,
     host: true,
-    port: 3000
+    port: 3000,
+    // Añade headers para tipo MIME (NUEVO)
+    headers: {
+      'Content-Type': 'application/javascript'
+    }
   },
   resolve: {
     alias: {
@@ -28,24 +36,42 @@ export default defineConfig({
     manifest: true,
     rollupOptions: {
       output: {
-        // Evita chunks inline
         inlineDynamicImports: false,
-        // Configuración optimizada para Vercel
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
         assetFileNames: 'assets/[name].[hash][extname]',
-        // Minificación más agresiva
-        compact: true
+        compact: true,
+        // Asegura tipos MIME en build (NUEVO)
+        generatedCode: {
+          preset: 'es2015',
+          arrowFunctions: false
+        }
       }
     },
-    // Añade estas opciones adicionales
     minify: 'terser',
-    sourcemap: false
+    sourcemap: false,
+    // Configuración adicional para módulos (NUEVO)
+    target: 'esnext',
+    modulePreload: {
+      polyfill: false
+    }
   },
   base: '/',
   optimizeDeps: {
     include: ['react', 'react-dom'],
-    // Forza la pre-optimización
-    force: true
+    force: true,
+    // Configuración adicional para JSX (NUEVO)
+    esbuildOptions: {
+      loader: {
+        '.js': 'jsx',
+        '.ts': 'tsx'
+      }
+    }
+  },
+  // Añade esta sección completa (NUEVO)
+  esbuild: {
+    loader: 'jsx',
+    include: /\.(jsx|tsx)$/,
+    exclude: /node_modules/
   }
 });
