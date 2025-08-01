@@ -1,16 +1,22 @@
 <!doctype html>
 <html lang="es">
-	<head>
+<head>
   <meta charset="UTF-8" />
-  <link rel="icon" href="/favicon.ico" />
-  <meta name="generator" content="Hostinger Horizons" />
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>DesdeAca.com San Juan - Alquileres Temporarios</title>
   <meta name="description" content="Encuentra el alojamiento perfecto en San Juan. Alquileres temporarios únicos con la mejor ubicación y comodidades." />
+  <!-- Preload critical resources -->
+  <link rel="modulepreload" href="/src/main.jsx" />
 </head>
-
-	<body>
-		<div id="root"></div>
-		<script type="module" src="/src/main.jsx"></script>
-	</body>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  
+  <!-- Fallback para navegadores sin JS -->
+  <noscript>
+    <h1>JavaScript es requerido para esta aplicación</h1>
+    <p>Por favor habilita JavaScript para continuar.</p>
+  </noscript>
+</body>
 </html>
