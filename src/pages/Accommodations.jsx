@@ -21,11 +21,16 @@ const Accommodations = () => {
 
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // 🚀 Petición a ruta relativa; Vercel lo reenviará a tu API en Railway
-    axios.get('https://paginas-production.up.railway.app/api/properties')  // ← URL real de tu backend
-      .then(res => {
+    const fetchProperties = async () => {
+      try {
+        setLoading(true);
+        // ✅ Cambia a ruta relativa (usará tu API en Vercel)
+        const res = await axios.get('/api/properties');
+        
         const normalized = res.data
           .filter(p => p.status === 'aprobado')
           .map(p => ({
@@ -36,6 +41,7 @@ const Accommodations = () => {
                 ? p.amenities.split(',').map(a => a.trim())
                 : []
           }));
+
         setProperties(normalized);
 
         if (searchParams) {
@@ -53,9 +59,16 @@ const Accommodations = () => {
         } else {
           setFilteredProperties(normalized);
         }
-      })
-      .catch(err => console.error("Error al cargar propiedades:", err));
-  }, []);
+      } catch (err) {
+        console.error("Error al cargar propiedades:", err);
+        setError("Error al cargar los alojamientos. Por favor intenta nuevamente.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, [searchParams]);
 
   useEffect(() => {
     const filtered = properties.filter((property) => {
@@ -85,11 +98,13 @@ const Accommodations = () => {
     setFilteredProperties(filtered);
   };
 
-  useEffect(() => {
-    if (searchParams) {
-      handleSearch(searchParams);
-    }
-  }, []);
+  if (loading) {
+    return <div className="flex justify-center pt-20">Cargando alojamientos...</div>;
+  }
+
+  if (error) {
+    return <div className="flex justify-center pt-20 text-red-500">{error}</div>;
+  }
 
   return (
     <div className="pt-16 min-h-screen bg-gray-50">
@@ -99,5 +114,3 @@ const Accommodations = () => {
 };
 
 export default Accommodations;
-
-

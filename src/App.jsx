@@ -17,7 +17,7 @@ import AdminReservations from '@/pages/AdminReservations';
 
 // Configuración centralizada de Axios (opcional)
 const configureAxios = () => {
-  axios.defaults.baseURL = 'https://paginas-production.up.railway.app';
+  axios.defaults.baseURL = '/api';
   axios.defaults.headers.common['Content-Type'] = 'application/json';
   // Puedes agregar más configuraciones globales aquí
 };

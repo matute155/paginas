@@ -1,4 +1,3 @@
-// src/pages/AddProperty.jsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, DollarSign } from 'lucide-react';
@@ -11,12 +10,10 @@ import Select from '@/components/ui/Select';
 import CheckboxGroup from '@/components/ui/CheckboxGroup';
 import FileUpload from '@/components/ui/FileUpload';
 
-// Configuración de la URL base del backend
-const API_BASE_URL = 'https://paginas-production.up.railway.app';
-
 const AddProperty = () => {
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '', description: '', location: '', address: '', propertyType: '',
     capacity: 1, bedrooms: 1, bathrooms: 1, price: '', amenities: [], images: [],
@@ -47,6 +44,8 @@ const AddProperty = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    
     try {
       const form = new FormData();
       Object.entries({
@@ -65,17 +64,26 @@ const AddProperty = () => {
         propertyType: formData.propertyType,
         bedrooms: formData.bedrooms,
         bathrooms: formData.bathrooms,
-        rules: formData.rules
+        rules: formData.rules,
+        status: 'pendiente' // Agregar estado inicial
       }).forEach(([key, value]) => form.append(key, value));
 
-      formData.images.forEach(image => form.append('images', image));
+      // Agregar imágenes si existen
+      if (formData.images.length > 0) {
+        formData.images.forEach(image => form.append('images', image));
+      }
 
-      // Petición corregida con URL completa del backend
-      await axios.post(`${API_BASE_URL}/api/properties`, form, {
+      // ✅ Cambiado a ruta relativa (/api/properties)
+      await axios.post('/api/properties', form, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      toast({ title: "¡Propiedad enviada!", description: "Tu propiedad ha sido enviada correctamente." });
+      toast({ 
+        title: "¡Propiedad enviada!", 
+        description: "Tu propiedad ha sido enviada para revisión." 
+      });
+      
+      // Resetear formulario
       setFormData({
         title: '', description: '', location: '', address: '', propertyType: '',
         capacity: 1, bedrooms: 1, bathrooms: 1, price: '', amenities: [], images: [],
@@ -83,8 +91,14 @@ const AddProperty = () => {
       });
       setCurrentStep(1);
     } catch (error) {
-      console.error(error);
-      toast({ title: "Error al guardar", description: "No se pudo guardar la propiedad.", variant: "destructive" });
+      console.error('Error al enviar propiedad:', error);
+      toast({ 
+        title: "Error al guardar", 
+        description: error.response?.data?.message || "No se pudo guardar la propiedad.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -92,32 +106,37 @@ const AddProperty = () => {
     switch (currentStep) {
       case 1: return (
         <div className="grid gap-6">
-          <Input label="Título" value={formData.title} onChange={e => handleInputChange('title', e.target.value)} />
-          <Textarea label="Descripción" value={formData.description} onChange={e => handleInputChange('description', e.target.value)} />
-          <Select label="Ubicación" options={locations} value={formData.location} onChange={e => handleInputChange('location', e.target.value)} />
-          <Select label="Tipo de Propiedad" options={propertyTypes} value={formData.propertyType} onChange={e => handleInputChange('propertyType', e.target.value)} />
-          <Input label="Dirección" value={formData.address} onChange={e => handleInputChange('address', e.target.value)} />
+          <Input label="Título" value={formData.title} onChange={e => handleInputChange('title', e.target.value)} required />
+          <Textarea label="Descripción" value={formData.description} onChange={e => handleInputChange('description', e.target.value)} required />
+          <Select label="Ubicación" options={locations} value={formData.location} onChange={e => handleInputChange('location', e.target.value)} required />
+          <Select label="Tipo de Propiedad" options={propertyTypes} value={formData.propertyType} onChange={e => handleInputChange('propertyType', e.target.value)} required />
+          <Input label="Dirección" value={formData.address} onChange={e => handleInputChange('address', e.target.value)} required />
         </div>
       );
       case 2: return (
         <div className="grid gap-6">
-          <Select label="Capacidad" options={Array.from({ length: 10 }, (_, i) => i + 1)} value={formData.capacity} onChange={e => handleInputChange('capacity', parseInt(e.target.value))} />
-          <Select label="Dormitorios" options={[1,2,3,4,5]} value={formData.bedrooms} onChange={e => handleInputChange('bedrooms', parseInt(e.target.value))} />
-          <Select label="Baños" options={[1,2,3,4,5]} value={formData.bathrooms} onChange={e => handleInputChange('bathrooms', parseInt(e.target.value))} />
+          <Select label="Capacidad" options={Array.from({ length: 10 }, (_, i) => i + 1)} value={formData.capacity} onChange={e => handleInputChange('capacity', parseInt(e.target.value))} required />
+          <Select label="Dormitorios" options={[1,2,3,4,5]} value={formData.bedrooms} onChange={e => handleInputChange('bedrooms', parseInt(e.target.value))} required />
+          <Select label="Baños" options={[1,2,3,4,5]} value={formData.bathrooms} onChange={e => handleInputChange('bathrooms', parseInt(e.target.value))} required />
           <CheckboxGroup label="Amenidades" options={amenities} selected={formData.amenities} onToggle={handleAmenityToggle} />
         </div>
       );
       case 3: return (
         <div className="grid gap-6">
-          <Input label="Precio por Noche (ARS)" icon={<DollarSign className="text-gray-400" />} value={formData.price} onChange={e => handleInputChange('price', e.target.value)} />
-          <FileUpload onChange={e => handleInputChange('images', Array.from(e.target.files))} />
+          <Input label="Precio por Noche (ARS)" icon={<DollarSign className="text-gray-400" />} value={formData.price} onChange={e => handleInputChange('price', e.target.value)} required />
+          <FileUpload 
+            onChange={files => handleInputChange('images', Array.from(files))} 
+            accept="image/*"
+            multiple
+          />
+          <p className="text-sm text-gray-500">Subí al menos una foto de tu propiedad (máx. 5MB cada una)</p>
         </div>
       );
       case 4: return (
         <div className="grid gap-6">
-          <Input label="Nombre Completo" value={formData.contactName} onChange={e => handleInputChange('contactName', e.target.value)} />
-          <Input label="Email" type="email" value={formData.contactEmail} onChange={e => handleInputChange('contactEmail', e.target.value)} />
-          <Input label="Teléfono" value={formData.contactPhone} onChange={e => handleInputChange('contactPhone', e.target.value)} />
+          <Input label="Nombre Completo" value={formData.contactName} onChange={e => handleInputChange('contactName', e.target.value)} required />
+          <Input label="Email" type="email" value={formData.contactEmail} onChange={e => handleInputChange('contactEmail', e.target.value)} required />
+          <Input label="Teléfono" value={formData.contactPhone} onChange={e => handleInputChange('contactPhone', e.target.value)} required />
           <Textarea label="Reglas de la Casa" value={formData.rules} onChange={e => handleInputChange('rules', e.target.value)} />
         </div>
       );
@@ -133,23 +152,49 @@ const AddProperty = () => {
           <h1 className="text-4xl font-bold text-gray-800">Publicá tu Propiedad</h1>
           <p className="text-gray-500 mt-2">Completá los datos paso a paso para agregar un hospedaje</p>
         </div>
+        
         <div className="mb-6 flex justify-between">
           {steps.map((label, index) => (
             <div key={index} className="flex-1 text-center">
-              <div className={`mx-auto w-10 h-10 flex items-center justify-center rounded-full text-white font-bold ${currentStep === index + 1 ? 'bg-blue-600' : 'bg-gray-300'}`}>{index + 1}</div>
-              <p className={`mt-2 text-sm ${currentStep === index + 1 ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>{label}</p>
+              <div className={`mx-auto w-10 h-10 flex items-center justify-center rounded-full text-white font-bold ${currentStep === index + 1 ? 'bg-blue-600' : 'bg-gray-300'}`}>
+                {index + 1}
+              </div>
+              <p className={`mt-2 text-sm ${currentStep === index + 1 ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>
+                {label}
+              </p>
             </div>
           ))}
         </div>
+
         {/* Formulario */}
-        <motion.form onSubmit={handleSubmit} key={currentStep} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="bg-white p-8 rounded-xl shadow-md space-y-6">
+        <motion.form 
+          onSubmit={handleSubmit} 
+          key={currentStep} 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          transition={{ duration: 0.4 }} 
+          className="bg-white p-8 rounded-xl shadow-md space-y-6"
+        >
           {renderStep()}
+          
           <div className="flex justify-between pt-4">
-            <Button type="button" variant="outline" onClick={() => setCurrentStep(s => Math.max(1, s - 1))} disabled={currentStep === 1}>Anterior</Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setCurrentStep(s => Math.max(1, s - 1))} 
+              disabled={currentStep === 1}
+            >
+              Anterior
+            </Button>
+            
             {currentStep < 4 ? (
-              <Button type="button" onClick={() => setCurrentStep(s => s + 1)}>Siguiente</Button>
+              <Button type="button" onClick={() => setCurrentStep(s => s + 1)}>
+                Siguiente
+              </Button>
             ) : (
-              <Button type="submit" className="bg-green-600 hover:bg-green-700">Enviar Propiedad</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Enviando...' : 'Enviar Propiedad'}
+              </Button>
             )}
           </div>
         </motion.form>

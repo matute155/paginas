@@ -21,8 +21,10 @@
       "src": "/api/(.*)",
       "dest": "/api/$1",
       "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Content-Type": "application/json"
+        "Access-Control-Allow-Origin": "https://paginas-fawn.vercel.app",
+        "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        "Content-Type": "application/json",
+        "X-Frame-Options": "DENY"
       }
     },
     {
@@ -35,19 +37,9 @@
       "src": "/(.*)",
       "dest": "/index.html",
       "headers": {
-        "Content-Type": "text/html; charset=utf-8"
+        "Content-Type": "text/html; charset=utf-8",
+        "X-Content-Type-Options": "nosniff"
       }
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        }
-      ]
     }
   ]
 }
