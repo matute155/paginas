@@ -1,0 +1,56 @@
+{
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/properties",
+      "destination": "/api/properties/index.js"
+    },
+    {
+      "source": "/api/properties/([^/]+)",
+      "destination": "/api/properties/[id].js?id=$1"
+    },
+    {
+      "source": "/api/users",
+      "destination": "/api/users/index.js"
+    },
+    {
+      "source": "/api/whatsapp/send",
+      "destination": "/api/whatsapp/send.js"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type, Authorization"
+        },
+        {
+          "key": "Access-Control-Max-Age",
+          "value": "86400"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  }
+}

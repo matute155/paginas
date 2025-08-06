@@ -1,0 +1,62 @@
+{
+  "name": "desdeaca-platform",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Plataforma de alquileres temporarios en San Juan, Argentina",
+  "keywords": ["rental", "san juan", "argentina", "whatsapp", "properties"],
+  "author": "DesdeAca.com",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "seed": "node scripts/seed-database.js",
+    "db:init": "node -e \"import('./lib/db.js').then(db => db.initializeDatabase())\"",
+    "db:reset": "node -e \"console.log('⚠️  Database reset not implemented. Use your PostgreSQL admin tools.')\"",
+    "test:api": "node -e \"console.log('API tests not implemented yet. Use curl or Postman for now.')\"",
+    "deploy": "vercel --prod",
+    "start": "npm run preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.20.1",
+    "axios": "^1.6.2",
+    "date-fns": "^2.30.0",
+    "lucide-react": "^0.294.0",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^4.2.1",
+    "pg": "^8.11.3",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.1.1",
+    "eslint": "^8.53.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.4",
+    "vite": "^5.0.0",
+    "tailwindcss": "^3.3.6",
+    "postcss": "^8.4.32",
+    "autoprefixer": "^10.4.16",
+    "@tailwindcss/forms": "^0.5.7"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/desdeaca-platform.git"
+  },
+  "homepage": "https://desdeaca.com",
+  "bugs": {
+    "url": "https://github.com/your-username/desdeaca-platform/issues"
+  }
+}
