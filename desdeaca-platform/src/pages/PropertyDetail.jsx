@@ -20,71 +20,65 @@ import {
   Star,
   Shield,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  AlertCircle,
+  Loader,
+  Home
 } from 'lucide-react';
-import { generateWhatsAppLink, generateQuickContactLink } from '../lib/whatsapp';
+import { propertiesAPI, whatsappAPI, handleApiError } from '../lib/api';
 import { SanJuanAreas, Amenities } from '../types';
 
 const PropertyDetail = () => {
   const { id } = useParams();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [contactForm, setContactForm] = useState({
     checkIn: '',
     checkOut: '',
     guests: 1,
-    guestName: ''
+    guestName: '',
+    guestEmail: '',
+    guestPhone: ''
   });
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactError, setContactError] = useState(null);
 
-  // Mock data - replace with API call
+  // Load property data on component mount
   useEffect(() => {
-    setTimeout(() => {
-      const mockProperty = {
-        id: '1',
-        title: 'Casa amplia con quincho en Villa Krause',
-        description: 'Hermosa casa familiar perfecta para familias y grupos de amigos. Cuenta con una amplia piscina, quincho equipado con parrilla, y todos los amenities necesarios para una estadía inolvidable en San Juan. La propiedad está ubicada en una zona tranquila y segura, a pocos minutos del centro de la ciudad y cerca de los principales atractivos turísticos.',
-        type: 'house',
-        area: 'villa_krause',
-        address: 'Villa Krause, San Juan',
-        coordinates: { lat: -31.5375, lng: -68.5364 },
-        images: [
-          'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800',
-          'https://images.unsplash.com/photo-1502005229762-cf1b2da16c06?w=800',
-          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
-          'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800',
-          'https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800'
-        ],
-        amenities: ['wifi', 'parking', 'pool', 'bbq', 'air_conditioning', 'kitchen', 'washing_machine', 'garden'],
-        capacity: 8,
-        bedrooms: 3,
-        bathrooms: 2,
-        price: {
-          daily: 15000,
-          weekly: 90000,
-          monthly: 350000
-        },
-        owner: {
-          id: 'owner1',
-          name: 'María González',
-          phone: '2644123456',
-          verified: true,
-          responseTime: '2 horas'
-        },
-        status: 'active',
-        rules: [
-          'No fumar en el interior',
-          'Mascotas permitidas con consulta previa',
-          'Horario de silencio: 22:00 - 08:00',
-          'Check-in: 15:00 - 20:00',
-          'Check-out: 11:00'
-        ]
-      };
-      
-      setProperty(mockProperty);
-      setLoading(false);
-    }, 1000);
+    if (id) {
+      loadProperty();
+    }
   }, [id]);
+
+  // Load property from API
+  const loadProperty = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await propertiesAPI.getById(id);
+      
+      if (response.success) {
+        setProperty(response.data);
+        // Set default capacity for guests
+        setContactForm(prev => ({
+          ...prev,
+          guests: Math.min(response.data.capacity, 1)
+        }));
+      } else {
+        throw new Error(response.message || 'Error al cargar la propiedad');
+      }
+
+    } catch (error) {
+      console.error('Error loading property:', error);
+      const errorMessage = handleApiError(error);
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get area display name
   const getAreaDisplayName = (areaKey) => {
@@ -120,35 +114,69 @@ const PropertyDetail = () => {
     return amenityMap[amenity] || { icon: null, label: amenity };
   };
 
-  // Handle WhatsApp contact
-  const handleWhatsAppContact = () => {
+  // Handle WhatsApp contact with detailed information
+  const handleWhatsAppContact = async () => {
     if (!property || !contactForm.checkIn || !contactForm.checkOut) {
-      alert('Por favor completa las fechas para contactar al propietario');
+      setContactError('Por favor completa las fechas para contactar al propietario');
       return;
     }
 
-    const whatsappUrl = generateWhatsAppLink({
-      ownerPhone: property.owner.phone,
-      propertyTitle: property.title,
-      checkIn: new Date(contactForm.checkIn),
-      checkOut: new Date(contactForm.checkOut),
-      guestName: contactForm.guestName,
-      guests: contactForm.guests
-    });
+    try {
+      setContactLoading(true);
+      setContactError(null);
 
-    window.open(whatsappUrl, '_blank');
+      const contactData = {
+        property_id: parseInt(id),
+        guest_name: contactForm.guestName || null,
+        guest_phone: contactForm.guestPhone || null,
+        guest_email: contactForm.guestEmail || null,
+        check_in: contactForm.checkIn,
+        check_out: contactForm.checkOut,
+        guests: contactForm.guests,
+        type: 'detailed'
+      };
+
+      const response = await whatsappAPI.generateContactLink(contactData);
+
+      if (response.success) {
+        // Open WhatsApp
+        window.open(response.data.whatsapp_url, '_blank');
+      } else {
+        throw new Error(response.message || 'Error al generar enlace de WhatsApp');
+      }
+
+    } catch (error) {
+      console.error('Error generating WhatsApp link:', error);
+      const errorMessage = handleApiError(error);
+      setContactError(errorMessage);
+    } finally {
+      setContactLoading(false);
+    }
   };
 
   // Handle quick contact
-  const handleQuickContact = () => {
+  const handleQuickContact = async () => {
     if (!property) return;
 
-    const whatsappUrl = generateQuickContactLink(
-      property.owner.phone,
-      property.title
-    );
+    try {
+      setContactLoading(true);
+      setContactError(null);
 
-    window.open(whatsappUrl, '_blank');
+      const response = await whatsappAPI.generateQuickContactLink(parseInt(id));
+
+      if (response.success) {
+        window.open(response.data.whatsapp_url, '_blank');
+      } else {
+        throw new Error(response.message || 'Error al generar enlace de WhatsApp');
+      }
+
+    } catch (error) {
+      console.error('Error generating quick WhatsApp link:', error);
+      const errorMessage = handleApiError(error);
+      setContactError(errorMessage);
+    } finally {
+      setContactLoading(false);
+    }
   };
 
   // Navigate images
@@ -168,20 +196,38 @@ const PropertyDetail = () => {
     }
   };
 
+  // Retry loading property
+  const retryLoad = () => {
+    loadProperty();
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="animate-pulse">
-          <div className="h-96 bg-gray-300"></div>
-          <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2">
-                <div className="h-8 bg-gray-300 rounded mb-4"></div>
-                <div className="h-4 bg-gray-300 rounded mb-2 w-1/2"></div>
-                <div className="h-32 bg-gray-300 rounded"></div>
-              </div>
-              <div className="h-64 bg-gray-300 rounded"></div>
-            </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin text-sanjuan-500 mx-auto mb-4" />
+          <p className="text-gray-600">Cargando propiedad...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Error al cargar la propiedad
+          </h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="space-x-4">
+            <button onClick={retryLoad} className="btn-primary">
+              Reintentar
+            </button>
+            <Link to="/" className="btn-secondary">
+              Volver al inicio
+            </Link>
           </div>
         </div>
       </div>
@@ -220,12 +266,15 @@ const PropertyDetail = () => {
 
       {/* Image Gallery */}
       <section className="relative h-96 bg-gray-200">
-        {property.images && property.images.length > 0 && (
+        {property.images && property.images.length > 0 ? (
           <>
             <img
               src={property.images[currentImageIndex]}
               alt={property.title}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.src = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800';
+              }}
             />
             
             {/* Navigation buttons */}
@@ -259,6 +308,13 @@ const PropertyDetail = () => {
               </>
             )}
           </>
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            <div className="text-center">
+              <Home className="w-16 h-16 mx-auto mb-4" />
+              <p>Sin imágenes disponibles</p>
+            </div>
+          </div>
         )}
       </section>
 
@@ -299,47 +355,51 @@ const PropertyDetail = () => {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Descripción
               </h2>
-              <p className="text-gray-700 leading-relaxed">
+              <p className="text-gray-700 leading-relaxed whitespace-pre-line">
                 {property.description}
               </p>
             </div>
 
             {/* Amenities */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Amenities
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {property.amenities.map((amenity) => {
-                  const amenityDetails = getAmenityDetails(amenity);
-                  return (
-                    <div key={amenity} className="flex items-center space-x-3">
-                      <div className="text-gray-600">
-                        {amenityDetails.icon}
+            {property.amenities && property.amenities.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  Amenities
+                </h2>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {property.amenities.map((amenity) => {
+                    const amenityDetails = getAmenityDetails(amenity);
+                    return (
+                      <div key={amenity} className="flex items-center space-x-3">
+                        <div className="text-gray-600">
+                          {amenityDetails.icon}
+                        </div>
+                        <span className="text-gray-700">
+                          {amenityDetails.label}
+                        </span>
                       </div>
-                      <span className="text-gray-700">
-                        {amenityDetails.label}
-                      </span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* House Rules */}
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Normas de la casa
-              </h2>
-              <ul className="space-y-2">
-                {property.rules.map((rule, index) => (
-                  <li key={index} className="flex items-start">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                    <span className="text-gray-700">{rule}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {property.rules && property.rules.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  Normas de la casa
+                </h2>
+                <ul className="space-y-2">
+                  {property.rules.map((rule, index) => (
+                    <li key={index} className="flex items-start">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                      <span className="text-gray-700">{rule}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Booking Card */}
@@ -352,10 +412,13 @@ const PropertyDetail = () => {
                     ${property.price.daily.toLocaleString()}
                     <span className="text-lg font-normal text-gray-600">/noche</span>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    Semanal: ${property.price.weekly.toLocaleString()} • 
-                    Mensual: ${property.price.monthly.toLocaleString()}
-                  </div>
+                  {(property.price.weekly || property.price.monthly) && (
+                    <div className="text-sm text-gray-600">
+                      {property.price.weekly && `Semanal: $${property.price.weekly.toLocaleString()}`}
+                      {property.price.weekly && property.price.monthly && ' • '}
+                      {property.price.monthly && `Mensual: $${property.price.monthly.toLocaleString()}`}
+                    </div>
+                  )}
                 </div>
 
                 {/* Contact Form */}
@@ -419,19 +482,32 @@ const PropertyDetail = () => {
                   </div>
                 </div>
 
+                {/* Error Message */}
+                {contactError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                    <p className="text-red-700 text-sm">{contactError}</p>
+                  </div>
+                )}
+
                 {/* Contact Buttons */}
                 <div className="space-y-3">
                   <button
                     onClick={handleWhatsAppContact}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
+                    disabled={contactLoading}
+                    className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2"
                   >
-                    <MessageCircle className="w-5 h-5" />
+                    {contactLoading ? (
+                      <Loader className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <MessageCircle className="w-5 h-5" />
+                    )}
                     <span>Consultar disponibilidad</span>
                   </button>
                   
                   <button
                     onClick={handleQuickContact}
-                    className="w-full btn-secondary flex items-center justify-center space-x-2"
+                    disabled={contactLoading}
+                    className="w-full btn-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                   >
                     <MessageCircle className="w-4 h-4" />
                     <span>Consulta rápida</span>

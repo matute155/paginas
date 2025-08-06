@@ -1,146 +1,138 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Star, Users, Trending, ChevronRight } from 'lucide-react';
+import { MapPin, Star, Users, Trending, ChevronRight, AlertCircle } from 'lucide-react';
 import SearchFilters from '../components/SearchFilters';
 import PropertyCard from '../components/PropertyCard';
+import { propertiesAPI, storage, handleApiError } from '../lib/api';
 
 const HomePage = () => {
   const [properties, setProperties] = useState([]);
   const [filteredProperties, setFilteredProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({});
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1,
+    hasNext: false,
+    hasPrev: false
+  });
 
-  // Mock data for development - replace with API call
+  // Load properties on component mount and when filters change
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const mockProperties = [
-        {
-          id: '1',
-          title: 'Casa amplia con quincho en Villa Krause',
-          description: 'Hermosa casa familiar con piscina y parrilla',
-          type: 'house',
-          area: 'villa_krause',
-          address: 'Villa Krause, San Juan',
-          coordinates: { lat: -31.5375, lng: -68.5364 },
-          images: [
-            'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=500',
-            'https://images.unsplash.com/photo-1502005229762-cf1b2da16c06?w=500'
-          ],
-          amenities: ['wifi', 'parking', 'pool', 'bbq', 'air_conditioning'],
-          capacity: 8,
-          bedrooms: 3,
-          bathrooms: 2,
-          price: {
-            daily: 15000,
-            weekly: 90000,
-            monthly: 350000
-          },
-          ownerId: 'owner1',
-          ownerPhone: '2644123456',
-          status: 'active'
-        },
-        {
-          id: '2',
-          title: 'Departamento moderno en el Centro',
-          description: 'Departamento completamente equipado en zona céntrica',
-          type: 'apartment',
-          area: 'centro',
-          address: 'Centro, San Juan',
-          coordinates: { lat: -31.5375, lng: -68.5364 },
-          images: [
-            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=500'
-          ],
-          amenities: ['wifi', 'air_conditioning', 'heating'],
-          capacity: 4,
-          bedrooms: 2,
-          bathrooms: 1,
-          price: {
-            daily: 8000,
-            weekly: 50000,
-            monthly: 180000
-          },
-          ownerId: 'owner2',
-          ownerPhone: '2644654321',
-          status: 'active'
-        },
-        {
-          id: '3',
-          title: 'Cabaña en Ullúm con vista al dique',
-          description: 'Escapada perfecta con vista panorámica al dique',
-          type: 'cabin',
-          area: 'ullum',
-          address: 'Ullúm, San Juan',
-          coordinates: { lat: -31.4167, lng: -68.6667 },
-          images: [
-            'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=500'
-          ],
-          amenities: ['wifi', 'parking', 'bbq', 'garden'],
-          capacity: 6,
-          bedrooms: 2,
-          bathrooms: 1,
-          price: {
-            daily: 12000,
-            weekly: 75000,
-            monthly: 280000
-          },
-          ownerId: 'owner3',
-          ownerPhone: '2644789012',
-          status: 'active'
+    loadProperties();
+  }, [filters]);
+
+  // Load properties from API
+  const loadProperties = async (newFilters = filters) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Check if we can use cached data for initial load
+      if (Object.keys(newFilters).length === 0 && storage.isCacheValid()) {
+        const cached = storage.getCachedProperties();
+        if (cached.length > 0) {
+          setProperties(cached);
+          setFilteredProperties(cached);
+          setLoading(false);
         }
-      ];
+      }
+
+      // Prepare API filters
+      const apiFilters = {
+        page: pagination.page,
+        limit: pagination.limit,
+        status: 'active',
+        ...convertFiltersToAPI(newFilters)
+      };
+
+      // Fetch from API
+      const response = await propertiesAPI.getAll(apiFilters);
       
-      setProperties(mockProperties);
-      setFilteredProperties(mockProperties);
+      if (response.success) {
+        const { data, pagination: paginationData } = response;
+        
+        setProperties(data);
+        setFilteredProperties(data);
+        setPagination(paginationData || pagination);
+
+        // Cache data only for initial unfiltered load
+        if (Object.keys(newFilters).length === 0) {
+          storage.setCachedProperties(data);
+        }
+      } else {
+        throw new Error(response.message || 'Error al cargar propiedades');
+      }
+
+    } catch (error) {
+      console.error('Error loading properties:', error);
+      const errorMessage = handleApiError(error);
+      setError(errorMessage);
+
+      // If there's an error and we have cached data, use it
+      if (Object.keys(newFilters).length === 0) {
+        const cached = storage.getCachedProperties();
+        if (cached.length > 0) {
+          setProperties(cached);
+          setFilteredProperties(cached);
+          setError('Mostrando datos guardados. ' + errorMessage);
+        }
+      }
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
+
+  // Convert frontend filters to API format
+  const convertFiltersToAPI = (frontendFilters) => {
+    const apiFilters = {};
+
+    if (frontendFilters.search) {
+      apiFilters.search = frontendFilters.search;
+    }
+    
+    if (frontendFilters.area) {
+      apiFilters.area = frontendFilters.area;
+    }
+    
+    if (frontendFilters.type) {
+      apiFilters.property_type = frontendFilters.type;
+    }
+    
+    if (frontendFilters.guests) {
+      apiFilters.capacity = frontendFilters.guests;
+    }
+    
+    if (frontendFilters.minPrice) {
+      apiFilters.min_price = frontendFilters.minPrice;
+    }
+    
+    if (frontendFilters.maxPrice) {
+      apiFilters.max_price = frontendFilters.maxPrice;
+    }
+
+    return apiFilters;
+  };
 
   // Handle filter changes
   const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
-    
-    let filtered = [...properties];
-    
-    // Apply search filter
-    if (newFilters.search) {
-      filtered = filtered.filter(property => 
-        property.title.toLowerCase().includes(newFilters.search.toLowerCase()) ||
-        property.description.toLowerCase().includes(newFilters.search.toLowerCase())
-      );
-    }
-    
-    // Apply area filter
-    if (newFilters.area) {
-      filtered = filtered.filter(property => property.area === newFilters.area);
-    }
-    
-    // Apply type filter
-    if (newFilters.type) {
-      filtered = filtered.filter(property => property.type === newFilters.type);
-    }
-    
-    // Apply capacity filter
-    if (newFilters.guests) {
-      filtered = filtered.filter(property => property.capacity >= newFilters.guests);
-    }
-    
-    // Apply price filter
-    if (newFilters.minPrice) {
-      filtered = filtered.filter(property => property.price.daily >= parseInt(newFilters.minPrice));
-    }
-    if (newFilters.maxPrice) {
-      filtered = filtered.filter(property => property.price.daily <= parseInt(newFilters.maxPrice));
-    }
-    
-    setFilteredProperties(filtered);
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
+  };
+
+  // Retry loading properties
+  const retryLoad = () => {
+    loadProperties();
   };
 
   const popularAreas = [
-    { name: 'Centro', area: 'centro', properties: 12 },
-    { name: 'Villa Krause', area: 'villa_krause', properties: 8 },
-    { name: 'Ullúm', area: 'ullum', properties: 6 },
-    { name: 'Rawson', area: 'rawson', properties: 5 }
+    { name: 'Centro', area: 'centro', properties: properties.filter(p => p.area === 'centro').length },
+    { name: 'Villa Krause', area: 'villa_krause', properties: properties.filter(p => p.area === 'villa_krause').length },
+    { name: 'Ullúm', area: 'ullum', properties: properties.filter(p => p.area === 'ullum').length },
+    { name: 'Rawson', area: 'rawson', properties: properties.filter(p => p.area === 'rawson').length }
   ];
 
   return (
@@ -175,6 +167,24 @@ const HomePage = () => {
         <SearchFilters onFiltersChange={handleFiltersChange} />
       </section>
 
+      {/* Error Message */}
+      {error && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-red-700">{error}</p>
+              <button
+                onClick={retryLoad}
+                className="text-red-600 hover:text-red-800 font-medium mt-2 text-sm"
+              >
+                Intentar nuevamente
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Popular Areas */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex items-center justify-between mb-8">
@@ -198,7 +208,7 @@ const HomePage = () => {
                 {area.name}
               </h3>
               <p className="text-gray-600">
-                {area.properties} propiedades
+                {area.properties} propiedad{area.properties !== 1 ? 'es' : ''}
               </p>
             </button>
           ))}
@@ -211,13 +221,13 @@ const HomePage = () => {
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
             {filteredProperties.length === properties.length ? 
               'Propiedades destacadas' : 
-              `${filteredProperties.length} propiedades encontradas`
+              `${filteredProperties.length} propiedad${filteredProperties.length !== 1 ? 'es' : ''} encontrada${filteredProperties.length !== 1 ? 's' : ''}`
             }
           </h2>
           {filteredProperties.length > 0 && (
             <div className="flex items-center text-gray-600">
               <Trending className="w-4 h-4 mr-2" />
-              <span className="text-sm">Ordenado por relevancia</span>
+              <span className="text-sm">Ordenado por fecha</span>
             </div>
           )}
         </div>
@@ -237,11 +247,46 @@ const HomePage = () => {
             ))}
           </div>
         ) : filteredProperties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProperties.map((property) => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProperties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="flex items-center justify-center space-x-4 mt-8">
+                <button
+                  onClick={() => {
+                    const newPage = pagination.page - 1;
+                    setPagination(prev => ({ ...prev, page: newPage }));
+                    loadProperties({ ...filters, page: newPage });
+                  }}
+                  disabled={!pagination.hasPrev}
+                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                
+                <span className="text-gray-600">
+                  Página {pagination.page} de {pagination.totalPages}
+                </span>
+                
+                <button
+                  onClick={() => {
+                    const newPage = pagination.page + 1;
+                    setPagination(prev => ({ ...prev, page: newPage }));
+                    loadProperties({ ...filters, page: newPage });
+                  }}
+                  disabled={!pagination.hasNext}
+                  className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
@@ -251,14 +296,19 @@ const HomePage = () => {
               No se encontraron propiedades
             </h3>
             <p className="text-gray-600 mb-6">
-              Intenta ajustar tus filtros de búsqueda
+              {Object.keys(filters).length > 0 
+                ? 'Intenta ajustar tus filtros de búsqueda'
+                : 'Aún no hay propiedades disponibles en la plataforma'
+              }
             </p>
-            <button
-              onClick={() => handleFiltersChange({})}
-              className="btn-primary"
-            >
-              Limpiar filtros
-            </button>
+            {Object.keys(filters).length > 0 && (
+              <button
+                onClick={() => handleFiltersChange({})}
+                className="btn-primary"
+              >
+                Limpiar filtros
+              </button>
+            )}
           </div>
         )}
       </section>

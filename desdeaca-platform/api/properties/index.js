@@ -1,128 +1,47 @@
-// Mock API endpoint for properties
-// This would be replaced with actual database calls in production
+import { query } from '../../lib/db.js';
 
-const mockProperties = [
-  {
-    id: '1',
-    title: 'Casa amplia con quincho en Villa Krause',
-    description: 'Hermosa casa familiar con piscina y parrilla. Perfecta para familias y grupos de amigos. Cuenta con una amplia piscina, quincho equipado con parrilla, y todos los amenities necesarios para una estadía inolvidable en San Juan.',
-    type: 'house',
-    area: 'villa_krause',
-    address: 'Villa Krause, San Juan',
-    coordinates: { lat: -31.5375, lng: -68.5364 },
-    images: [
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800',
-      'https://images.unsplash.com/photo-1502005229762-cf1b2da16c06?w=800',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800'
-    ],
-    amenities: ['wifi', 'parking', 'pool', 'bbq', 'air_conditioning', 'kitchen', 'washing_machine', 'garden'],
-    capacity: 8,
-    bedrooms: 3,
-    bathrooms: 2,
-    price: {
-      daily: 15000,
-      weekly: 90000,
-      monthly: 350000
-    },
-    owner: {
-      id: 'owner1',
-      name: 'María González',
-      phone: '2644123456',
-      verified: true,
-      responseTime: '2 horas'
-    },
-    status: 'active',
-    rules: [
-      'No fumar en el interior',
-      'Mascotas permitidas con consulta previa',
-      'Horario de silencio: 22:00 - 08:00',
-      'Check-in: 15:00 - 20:00',
-      'Check-out: 11:00'
-    ],
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-15T00:00:00Z'
-  },
-  {
-    id: '2',
-    title: 'Departamento moderno en el Centro',
-    description: 'Departamento completamente equipado en zona céntrica de San Juan. Ideal para parejas o viajeros de negocios. Ubicado cerca de restaurantes, comercios y atractivos turísticos.',
-    type: 'apartment',
-    area: 'centro',
-    address: 'Centro, San Juan',
-    coordinates: { lat: -31.5375, lng: -68.5364 },
-    images: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
-      'https://images.unsplash.com/photo-1560448204-604b3592824f?w=800'
-    ],
-    amenities: ['wifi', 'air_conditioning', 'heating', 'kitchen'],
-    capacity: 4,
-    bedrooms: 2,
-    bathrooms: 1,
-    price: {
-      daily: 8000,
-      weekly: 50000,
-      monthly: 180000
-    },
-    owner: {
-      id: 'owner2',
-      name: 'Carlos Pérez',
-      phone: '2644654321',
-      verified: true,
-      responseTime: '1 hora'
-    },
-    status: 'active',
-    rules: [
-      'No fumar',
-      'No mascotas',
-      'Check-in: 14:00 - 22:00',
-      'Check-out: 10:00'
-    ],
-    createdAt: '2024-01-05T00:00:00Z',
-    updatedAt: '2024-01-20T00:00:00Z'
-  },
-  {
-    id: '3',
-    title: 'Cabaña en Ullúm con vista al dique',
-    description: 'Escapada perfecta con vista panorámica al dique de Ullúm. Ideal para descansar y disfrutar de deportes acuáticos. Ambiente tranquilo rodeado de naturaleza.',
-    type: 'cabin',
-    area: 'ullum',
-    address: 'Ullúm, San Juan',
-    coordinates: { lat: -31.4167, lng: -68.6667 },
-    images: [
-      'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800',
-      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800'
-    ],
-    amenities: ['wifi', 'parking', 'bbq', 'garden', 'kitchen'],
-    capacity: 6,
-    bedrooms: 2,
-    bathrooms: 1,
-    price: {
-      daily: 12000,
-      weekly: 75000,
-      monthly: 280000
-    },
-    owner: {
-      id: 'owner3',
-      name: 'Ana Rodríguez',
-      phone: '2644789012',
-      verified: true,
-      responseTime: '3 horas'
-    },
-    status: 'active',
-    rules: [
-      'Mascotas permitidas',
-      'Respetar la naturaleza',
-      'No ruidos molestos después de las 23:00',
-      'Check-in: 16:00 - 20:00',
-      'Check-out: 11:00'
-    ],
-    createdAt: '2024-01-10T00:00:00Z',
-    updatedAt: '2024-01-25T00:00:00Z'
+// Helper function to validate property data
+function validatePropertyData(data) {
+  const errors = [];
+  
+  if (!data.title || data.title.trim().length < 5) {
+    errors.push('El título debe tener al menos 5 caracteres');
   }
-];
+  
+  if (!data.description || data.description.trim().length < 20) {
+    errors.push('La descripción debe tener al menos 20 caracteres');
+  }
+  
+  if (!data.area) {
+    errors.push('La zona es requerida');
+  }
+  
+  if (!data.price_daily || data.price_daily <= 0) {
+    errors.push('El precio diario debe ser mayor a 0');
+  }
+  
+  if (!data.capacity || data.capacity < 1) {
+    errors.push('La capacidad debe ser al menos 1 huésped');
+  }
+  
+  const validTypes = ['house', 'apartment', 'cabin', 'studio'];
+  if (!data.property_type || !validTypes.includes(data.property_type)) {
+    errors.push('Tipo de propiedad inválido');
+  }
+  
+  const validAreas = [
+    'centro', 'villa_krause', 'chimbas', 'rawson', 'pocito', 
+    'santa_lucia', 'ullum', 'zonda', 'caucete', 'rivadavia'
+  ];
+  if (!validAreas.includes(data.area)) {
+    errors.push('Zona inválida');
+  }
+  
+  return errors;
+}
 
-// API Handler for Vercel Serverless Functions
-export default function handler(req, res) {
+// Main API handler
+export default async function handler(req, res) {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -135,77 +54,301 @@ export default function handler(req, res) {
     return;
   }
 
-  const { method, query } = req;
-
-  switch (method) {
-    case 'GET':
-      // Get all properties or filter by query parameters
-      let filteredProperties = [...mockProperties];
-
-      // Apply filters
-      if (query.area) {
-        filteredProperties = filteredProperties.filter(p => p.area === query.area);
-      }
-      
-      if (query.type) {
-        filteredProperties = filteredProperties.filter(p => p.type === query.type);
-      }
-      
-      if (query.minPrice) {
-        filteredProperties = filteredProperties.filter(p => p.price.daily >= parseInt(query.minPrice));
-      }
-      
-      if (query.maxPrice) {
-        filteredProperties = filteredProperties.filter(p => p.price.daily <= parseInt(query.maxPrice));
-      }
-      
-      if (query.capacity) {
-        filteredProperties = filteredProperties.filter(p => p.capacity >= parseInt(query.capacity));
-      }
-      
-      if (query.search) {
-        const searchTerm = query.search.toLowerCase();
-        filteredProperties = filteredProperties.filter(p => 
-          p.title.toLowerCase().includes(searchTerm) ||
-          p.description.toLowerCase().includes(searchTerm)
-        );
-      }
-
-      res.status(200).json({
-        success: true,
-        data: filteredProperties,
-        total: filteredProperties.length
-      });
-      break;
-
-    case 'POST':
-      // Create new property (for owners)
-      const newProperty = {
-        id: String(mockProperties.length + 1),
-        ...req.body,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        status: 'pending_approval'
-      };
-      
-      mockProperties.push(newProperty);
-      
-      res.status(201).json({
-        success: true,
-        data: newProperty,
-        message: 'Propiedad creada exitosamente'
-      });
-      break;
-
-    default:
-      res.setHeader('Allow', ['GET', 'POST']);
-      res.status(405).json({
-        success: false,
-        message: `Method ${method} not allowed`
-      });
-      break;
+  try {
+    switch (req.method) {
+      case 'GET':
+        await handleGet(req, res);
+        break;
+      case 'POST':
+        await handlePost(req, res);
+        break;
+      default:
+        res.setHeader('Allow', ['GET', 'POST']);
+        res.status(405).json({
+          success: false,
+          message: `Method ${req.method} not allowed`
+        });
+    }
+  } catch (error) {
+    console.error('API Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 
-// Export for ES modules (if using Node.js with "type": "module")
-export { handler, mockProperties };
+// Handle GET requests - List and filter properties
+async function handleGet(req, res) {
+  const {
+    area,
+    property_type,
+    min_price,
+    max_price,
+    capacity,
+    search,
+    page = 1,
+    limit = 20,
+    status = 'active'
+  } = req.query;
+
+  let whereConditions = ['status = $1'];
+  let params = [status];
+  let paramCount = 1;
+
+  // Build WHERE conditions dynamically
+  if (area) {
+    paramCount++;
+    whereConditions.push(`area = $${paramCount}`);
+    params.push(area);
+  }
+
+  if (property_type) {
+    paramCount++;
+    whereConditions.push(`property_type = $${paramCount}`);
+    params.push(property_type);
+  }
+
+  if (min_price) {
+    paramCount++;
+    whereConditions.push(`price_daily >= $${paramCount}`);
+    params.push(parseFloat(min_price));
+  }
+
+  if (max_price) {
+    paramCount++;
+    whereConditions.push(`price_daily <= $${paramCount}`);
+    params.push(parseFloat(max_price));
+  }
+
+  if (capacity) {
+    paramCount++;
+    whereConditions.push(`capacity >= $${paramCount}`);
+    params.push(parseInt(capacity));
+  }
+
+  if (search) {
+    paramCount++;
+    whereConditions.push(`(title ILIKE $${paramCount} OR description ILIKE $${paramCount})`);
+    params.push(`%${search}%`);
+  }
+
+  // Calculate offset for pagination
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  // Main query with user join for owner information
+  const queryText = `
+    SELECT 
+      p.*,
+      u.name as owner_name,
+      u.phone as owner_phone,
+      u.whatsapp_number as owner_whatsapp,
+      u.verified as owner_verified
+    FROM properties p
+    JOIN users u ON p.owner_id = u.id
+    WHERE ${whereConditions.join(' AND ')}
+    ORDER BY p.created_at DESC
+    LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
+  `;
+
+  params.push(parseInt(limit), offset);
+
+  // Count query for pagination
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM properties p
+    WHERE ${whereConditions.join(' AND ')}
+  `;
+
+  const [propertiesResult, countResult] = await Promise.all([
+    query(queryText, params),
+    query(countQuery, params.slice(0, -2)) // Remove limit and offset for count
+  ]);
+
+  // Transform data to match frontend expectations
+  const properties = propertiesResult.rows.map(row => ({
+    id: row.id.toString(),
+    title: row.title,
+    description: row.description,
+    type: row.property_type,
+    area: row.area,
+    address: row.address,
+    coordinates: row.coordinates,
+    images: row.images || [],
+    amenities: row.amenities || [],
+    capacity: row.capacity,
+    bedrooms: row.bedrooms,
+    bathrooms: row.bathrooms,
+    price: {
+      daily: parseFloat(row.price_daily),
+      weekly: row.price_weekly ? parseFloat(row.price_weekly) : null,
+      monthly: row.price_monthly ? parseFloat(row.price_monthly) : null
+    },
+    owner: {
+      id: row.owner_id,
+      name: row.owner_name,
+      phone: row.owner_phone || row.owner_whatsapp,
+      verified: row.owner_verified,
+      responseTime: '2-4 horas' // Default value, could be calculated based on inquiries
+    },
+    status: row.status,
+    rules: row.rules || [],
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
+
+  const total = parseInt(countResult.rows[0].total);
+  const totalPages = Math.ceil(total / parseInt(limit));
+
+  res.status(200).json({
+    success: true,
+    data: properties,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages,
+      hasNext: parseInt(page) < totalPages,
+      hasPrev: parseInt(page) > 1
+    }
+  });
+}
+
+// Handle POST requests - Create new property
+async function handlePost(req, res) {
+  const {
+    owner_id,
+    title,
+    description,
+    property_type,
+    area,
+    address,
+    coordinates,
+    images = [],
+    amenities = [],
+    capacity,
+    bedrooms = 0,
+    bathrooms = 0,
+    price_daily,
+    price_weekly,
+    price_monthly,
+    rules = [],
+    availability_start,
+    availability_end
+  } = req.body;
+
+  // Validate required fields
+  const validationErrors = validatePropertyData(req.body);
+  if (validationErrors.length > 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'Datos inválidos',
+      errors: validationErrors
+    });
+  }
+
+  // Verify owner exists
+  const ownerCheck = await query(
+    'SELECT id, user_type FROM users WHERE id = $1',
+    [owner_id]
+  );
+
+  if (ownerCheck.rows.length === 0) {
+    return res.status(404).json({
+      success: false,
+      message: 'Propietario no encontrado'
+    });
+  }
+
+  if (ownerCheck.rows[0].user_type !== 'owner') {
+    return res.status(403).json({
+      success: false,
+      message: 'Solo los propietarios pueden crear propiedades'
+    });
+  }
+
+  // Calculate weekly and monthly prices if not provided
+  const calculatedWeekly = price_weekly || (price_daily * 7 * 0.9); // 10% discount
+  const calculatedMonthly = price_monthly || (price_daily * 30 * 0.8); // 20% discount
+
+  // Insert new property
+  const insertQuery = `
+    INSERT INTO properties (
+      owner_id, title, description, property_type, area, address, coordinates,
+      images, amenities, capacity, bedrooms, bathrooms, price_daily, price_weekly,
+      price_monthly, rules, availability_start, availability_end
+    ) VALUES (
+      $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+    ) RETURNING *
+  `;
+
+  const result = await query(insertQuery, [
+    owner_id,
+    title.trim(),
+    description.trim(),
+    property_type,
+    area,
+    address?.trim(),
+    coordinates ? JSON.stringify(coordinates) : null,
+    images,
+    amenities,
+    capacity,
+    bedrooms,
+    bathrooms,
+    price_daily,
+    calculatedWeekly,
+    calculatedMonthly,
+    rules,
+    availability_start || null,
+    availability_end || null
+  ]);
+
+  const newProperty = result.rows[0];
+
+  // Get owner information for response
+  const ownerInfo = await query(
+    'SELECT name, phone, whatsapp_number, verified FROM users WHERE id = $1',
+    [owner_id]
+  );
+
+  const owner = ownerInfo.rows[0];
+
+  // Transform response to match frontend format
+  const responseProperty = {
+    id: newProperty.id.toString(),
+    title: newProperty.title,
+    description: newProperty.description,
+    type: newProperty.property_type,
+    area: newProperty.area,
+    address: newProperty.address,
+    coordinates: newProperty.coordinates,
+    images: newProperty.images || [],
+    amenities: newProperty.amenities || [],
+    capacity: newProperty.capacity,
+    bedrooms: newProperty.bedrooms,
+    bathrooms: newProperty.bathrooms,
+    price: {
+      daily: parseFloat(newProperty.price_daily),
+      weekly: parseFloat(newProperty.price_weekly),
+      monthly: parseFloat(newProperty.price_monthly)
+    },
+    owner: {
+      id: owner_id,
+      name: owner.name,
+      phone: owner.phone || owner.whatsapp_number,
+      verified: owner.verified,
+      responseTime: '2-4 horas'
+    },
+    status: newProperty.status,
+    rules: newProperty.rules || [],
+    createdAt: newProperty.created_at,
+    updatedAt: newProperty.updated_at
+  };
+
+  res.status(201).json({
+    success: true,
+    data: responseProperty,
+    message: 'Propiedad creada exitosamente. Será revisada antes de publicarse.'
+  });
+}
